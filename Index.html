@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" id="mainHtml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Study Hub Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://apis.google.com/js/api.js" async defer></script>
+
+    <style>
+        :root { --accent: #7c6ff7; --bg: #0f0e17; --surface: #1a1828; }
+        body { font-family: 'Cairo', 'Poppins', sans-serif; background: var(--bg); color: white; }
+        .glass { background: rgba(26, 24, 40, 0.9); backdrop-filter: blur(10px); border: 1px solid #2e2b45; }
+        .rtl { direction: rtl; }
+        .ltr { direction: ltr; }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <nav class="glass sticky top-0 z-50 p-4 flex justify-between items-center">
+        <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-green-400">
+            🎓 My Study Hub <span class="text-sm font-light">v2.0</span>
+        </h1>
+        <div class="flex gap-3">
+            <button onclick="toggleLanguage()" class="px-3 py-1 border border-purple-500 rounded-full text-xs hover:bg-purple-500 transition">
+                English / عربي
+            </button>
+            <button id="authBtn" onclick="handleAuthClick()" class="bg-purple-600 px-4 py-1 rounded-lg text-sm font-bold shadow-lg shadow-purple-500/20">
+                Login with Google
+            </button>
+        </div>
+    </nav>
+
+    <main class="container mx-auto p-6 max-w-4xl">
+        <div class="glass rounded-2xl p-6 mb-8">
+            <div class="flex flex-col gap-4">
+                <input type="text" id="folderIdInput" placeholder="أدخل رابط الفولدر أو الـ ID (Enter Folder ID or Link)" 
+                       class="w-full bg-[#0f0e17] border border-[#2e2b45] p-3 rounded-xl outline-none focus:border-purple-500">
+                <button onclick="startScanning()" id="scanBtn" class="bg-green-500 text-black font-bold p-3 rounded-xl hover:bg-green-400 disabled:opacity-50">
+                    🔍 ابدأ الفحص الذكي (Start Smart Scan)
+                </button>
+            </div>
+            <p id="statusMsg" class="text-xs mt-3 text-gray-400 text-center"></p>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8" id="statsSection">
+            </div>
+
+        <div class="flex justify-between items-center mb-4">
+            <h2 id="sectionTitle" class="font-bold text-lg">📁 الملفات المكتشفة</h2>
+            <input type="text" id="innerSearch" oninput="ui_renderFiles()" placeholder="بحث سريع..." 
+                   class="bg-transparent border-b border-gray-700 text-sm p-1 outline-none">
+        </div>
+
+        <div id="fileGrid" class="grid gap-4">
+            </div>
+    </main>
+
+    <script>
+        // --- الإعدادات (حطي الـ Keys بتاعتك هنا) ---
+        const CLIENT_ID = '1090963697766-acfinmsrf06kai90qimrmcaer6s1972i.apps.googleusercontent.com';
+        const API_KEY = 'AIzaSyDlPVBqZRBeNUXu1c3VY3z7jDjl78GlVYY';
+        const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
+
+        let tokenClient;
+        let gapiInited = false;
+        let gisInited = false;
+        let allFiles = JSON.parse(localStorage.getItem('studyHubFiles') || '[]');
+        let currentLang = 'ar';
+
+        const i18n = {
+            ar: { scan: "فحص", login: "دخول", folder: "فولدر", sheet: "حل شيت", lec: "محاضرة", lab: "لاب", stats: "إحصائيات" },
+            en: { scan: "Scan", login: "Login", folder: "Folder", sheet: "Sheet", lec: "Lecture", lab: "Lab", stats: "Stats" }
+        };
+
+        // --- تهيئة المكتبات ---
+        function gapiLoaded() { gapi.load('client', () => { gapi.client.init({ apiKey: API_KEY, discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"] }).then(() => gapiInited = true); }); }
+        function gisLoaded() { tokenClient = google.accounts.oauth2.initTokenClient({ client_id: CLIENT_ID, scope: SCOPES, callback: '' }); gisInited = true; }
+
+        window.onload = () => { gapiLoaded(); gisLoaded(); ui_renderFiles(); };
+
+        // --- التحكم في التصاريح ---
+        function handleAuthClick() {
+            tokenClient.callback = async (resp) => {
+                if (resp.error !== undefined) throw (resp);
+                document.getElementById('authBtn').innerText = "Connected ✅";
+                showStatus("تم الاتصال بجوجل درايف بنجاح!");
+            };
+            tokenClient.requestAccessToken({ prompt: 'consent' });
+        }
+
+        // --- وظيفة الفحص الذكي (Recursive Scanning) ---
+        async function startScanning() {
+            let input = document.getElementById('folderIdInput').value;
+            let folderId = input.includes('id=') ? input.split('id=')[1] : input.split('/').pop();
+            
+            if (!folderId) return alert("Please enter a valid Folder ID");
+            
+            showStatus("جاري فحص الملفات... قد يستغرق هذا وقتاً بناءً على حجم الدرايف");
+            allFiles = []; 
+            await scanFolder(folderId);
+            localStorage.setItem('studyHubFiles', JSON.stringify(allFiles));
+            ui_renderFiles();
+            showStatus("اكتمل الفحص! تم العثور على " + allFiles.length + " ملف.");
+        }
+
+        async function scanFolder(folderId, path = "") {
+            let response = await gapi.client.drive.files.list({
+                q: `'${folderId}' in parents and trashed = false`,
+                fields: 'files(id, name, mimeType, webViewLink, iconLink)',
+            });
+
+            let files = response.result.files;
+            for (let file of files) {
+                if (file.mimeType === 'application/vnd.google-apps.folder') {
+                    await scanFolder(file.id, path + file.name + " / ");
+                } else {
+                    // تصنيف ذكي بناءً على الاسم
+                    let type = 'other';
+                    if (file.name.includes('محاضرة') || file.name.toLowerCase().includes('lec')) type = 'lecture';
+                    if (file.name.includes('حل') || file.name.toLowerCase().includes('sheet')) type = 'sheet';
+                    if (file.name.toLowerCase().includes('lab') || file.name.includes('لاب')) type = 'lab';
+
+                    allFiles.push({ ...file, studyType: type, path: path });
+                }
+            }
+        }
+
+        // --- واجهة المستخدم ---
+        function ui_renderFiles() {
+            const grid = document.getElementById('fileGrid');
+            const term = document.getElementById('innerSearch').value.toLowerCase();
+            
+            let filtered = allFiles.filter(f => f.name.toLowerCase().includes(term));
+            
+            grid.innerHTML = filtered.map(file => `
+                <div class="glass p-4 rounded-xl flex justify-between items-center hover:border-purple-500 transition cursor-pointer" onclick="window.open('${file.webViewLink}')">
+                    <div class="flex items-center gap-3">
+                        <img src="${file.iconLink}" class="w-6 h-6">
+                        <div>
+                            <p class="text-sm font-bold">${file.name}</p>
+                            <p class="text-[10px] text-gray-500">${file.path}</p>
+                        </div>
+                    </div>
+                    <span class="text-[10px] px-2 py-1 rounded bg-gray-800 text-purple-400 border border-purple-900">
+                        ${file.studyType.toUpperCase()}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'ar' ? 'en' : 'ar';
+            document.getElementById('mainHtml').dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+            document.getElementById('mainHtml').lang = currentLang;
+            // يمكن توسيعها لتغيير نصوص الزراير
+        }
+
+        function showStatus(msg) { document.getElementById('statusMsg').innerText = msg; }
+    </script>
+    <script src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+    <script src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+</body>
+</html>
