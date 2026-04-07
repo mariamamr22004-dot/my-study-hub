@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>StudyHub AI - Professional</title>
+    <title>StudyHub AI - Clean Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -12,28 +12,176 @@
         :root { --accent: #7c6ff7; }
         .dark { --bg: #0b0a12; --text: #ffffff; --card: rgba(30, 28, 45, 0.95); --border: #2e2b45; }
         .light { --bg: #f3f4f6; --text: #1f2937; --card: #ffffff; --border: #e5e7eb; }
-        
-        body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); transition: 0.3s; overflow-x: hidden; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); transition: 0.3s; margin: 0; padding: 0; overflow-x: hidden; }
         .glass { background: var(--card); border: 1px solid var(--border); backdrop-filter: blur(10px); }
-        .active-btn { background: var(--accent) !important; color: white !important; }
+        .active-btn { background: var(--accent) !important; color: white !important; box-shadow: 0 4px 12px rgba(124, 111, 247, 0.3); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .file-card { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-radius: 16px; margin-bottom: 8px; }
+        .file-card { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-radius: 18px; margin-bottom: 8px; width: 100%; box-sizing: border-box; }
+        #main-wrapper { min-height: 100vh; display: flex; flex-direction: column; }
     </style>
 </head>
-<body class="dark pb-24">
+<body class="dark">
 
-    <nav class="glass sticky top-0 z-50 px-5 py-4 flex justify-between items-center shadow-md">
-        <h1 class="text-lg font-bold">StudyHub <span class="text-purple-500">AI</span></h1>
-        <div class="flex gap-3">
+<div id="main-wrapper">
+    <nav class="glass sticky top-0 z-50 px-5 py-4 flex justify-between items-center shadow-lg">
+        <h1 class="text-lg font-bold tracking-tight">StudyHub <span class="text-purple-500">AI</span></h1>
+        <div class="flex gap-4 items-center">
             <button onclick="toggleMode()" class="text-xl">🌓</button>
-            <button onclick="toggleSettings()" class="text-xl">⚙️</button>
-            <button id="authBtn" onclick="handleAuthClick()" class="bg-purple-600 px-3 py-1 rounded-full text-[9px] font-black text-white">SIGN IN</button>
+            <button onclick="toggleSettings()" class="text-xl opacity-70">⚙️</button>
+            <button id="authBtn" onclick="handleAuthClick()" class="bg-purple-600 px-3 py-1 rounded-full text-[9px] font-black text-white uppercase">Sign In</button>
         </div>
     </nav>
 
-    <div id="settingsPanel" class="glass m-4 p-5 rounded-3xl hidden">
+    <div id="settingsPanel" class="glass m-4 p-5 rounded-3xl hidden shadow-2xl">
+        <p class="text-[10px] text-purple-400 font-bold mb-3 uppercase tracking-widest">System Configuration</p>
         <input type="text" id="clientIdInput" placeholder="Client ID" class="w-full bg-black/10 border border-gray-500 p-3 rounded-xl mb-2 text-xs outline-none text-inherit">
-        <input type="password" id="apiKeyInput" placeholder="API Key" class="w-full bg-black/10 border border-gray-500 p-3 rounded-xl mb-3 text-xs outline-none text-inherit">
+        <input type="password" id="apiKeyInput" placeholder="API Key" class="w-full bg-black/10 border border-gray-500 p-3 rounded-xl mb-4 text-xs outline-none text-inherit">
+        <button onclick="saveSettings()" class="w-full bg-purple-600 p-3 rounded-xl text-[10px] font-bold text-white uppercase">Apply Keys</button>
+        <button onclick="fullReset()" class="w-full mt-2 border border-red-500/30 text-red-500 p-3 rounded-xl text-[10px] font-bold uppercase">Reset Everything</button>
+    </div>
+
+    <main class="max-w-2xl mx-auto px-4 w-full mt-6 flex-grow">
+        <div class="glass rounded-[32px] p-5 mb-8 shadow-xl">
+            <div class="flex gap-2 mb-3">
+                <input type="text" id="folderIdInput" placeholder="Drive Link or Folder ID" class="flex-1 bg-black/5 border border-gray-400 p-4 rounded-2xl text-sm outline-none text-inherit">
+                <button onclick="startScanning()" class="bg-white text-black font-black px-6 rounded-2xl active:scale-95 transition-all text-[10px] uppercase">Sync</button>
+            </div>
+            <input type="text" id="searchBar" oninput="renderUI()" placeholder="🔍 Quick search in synced files..." class="w-full bg-black/5 border border-gray-400 p-4 rounded-2xl text-sm outline-none text-inherit">
+        </div>
+
+        <div id="quickAccessSection" class="hidden mb-8">
+            <h2 class="text-purple-500 text-[9px] font-black mb-3 uppercase tracking-widest px-1">Pinned Subjects</h2>
+            <div id="quickAccessGrid" class="flex gap-2 overflow-x-auto no-scrollbar"></div>
+        </div>
+
+        <div class="space-y-6">
+            <section>
+                <div class="flex justify-between items-center mb-3 px-1">
+                    <span class="text-gray-500 text-[9px] font-black uppercase tracking-tighter">1. Academic Year</span>
+                    <button onclick="toggleNavStar()" class="text-[9px] text-purple-500 font-bold">★ PIN PATH</button>
+                </div>
+                <div id="yearTabs" class="flex gap-2 overflow-x-auto no-scrollbar"></div>
+            </section>
+
+            <section id="subjectSection" class="hidden">
+                <span class="text-gray-500 text-[9px] font-black uppercase block mb-3 px-1">2. Course / Subject</span>
+                <div id="subjectTabs" class="flex gap-2 overflow-x-auto no-scrollbar"></div>
+            </section>
+
+            <section id="typeSection" class="hidden">
+                <span class="text-gray-500 text-[9px] font-black uppercase block mb-3 px-1">3. Folder (Category)</span>
+                <div id="typeTabs" class="flex gap-2 overflow-x-auto no-scrollbar"></div>
+            </section>
+        </div>
+
+        <div id="fileGrid" class="mt-10 border-t border-gray-500/10 pt-6 pb-20"></div>
+    </main>
+</div>
+
+<script>
+    let CONFIG = JSON.parse(localStorage.getItem('studyHub_Config')) || { clientId: '', apiKey: '' };
+    let allFiles = JSON.parse(localStorage.getItem('studyHub_Files')) || [];
+    let stars = JSON.parse(localStorage.getItem('studyHub_Stars')) || [];
+    let navStars = JSON.parse(localStorage.getItem('studyHub_NavStars')) || []; 
+    let accessToken = null;
+    let selYear = 'all', selSub = 'all', selCat = 'all';
+
+    function toggleMode() { document.body.classList.toggle('dark'); document.body.classList.toggle('light'); }
+    function toggleSettings() { document.getElementById('settingsPanel').classList.toggle('hidden'); }
+    function saveSettings() { CONFIG.clientId = document.getElementById('clientIdInput').value; CONFIG.apiKey = document.getElementById('apiKeyInput').value; localStorage.setItem('studyHub_Config', JSON.stringify(CONFIG)); location.reload(); }
+    function fullReset() { if(confirm("This will wipe all synced files. Continue?")) { localStorage.clear(); location.reload(); } }
+
+    window.onload = () => {
+        document.getElementById('clientIdInput').value = CONFIG.clientId;
+        document.getElementById('apiKeyInput').value = CONFIG.apiKey;
+        if (CONFIG.apiKey) gapi.load('client', () => gapi.client.init({ apiKey: CONFIG.apiKey, discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"] }));
+        if (CONFIG.clientId) {
+            google.accounts.oauth2.initTokenClient({
+                client_id: CONFIG.clientId, scope: 'https://www.googleapis.com/auth/drive.readonly',
+                callback: (resp) => { accessToken = resp.access_token; document.getElementById('authBtn').innerText = "LIVE ✅"; renderUI(); }
+            }).requestAccessToken({ prompt: 'none' });
+        }
+        renderUI();
+    };
+
+    function handleAuthClick() {
+        google.accounts.oauth2.initTokenClient({
+            client_id: CONFIG.clientId, scope: 'https://www.googleapis.com/auth/drive.readonly',
+            callback: (resp) => { accessToken = resp.access_token; renderUI(); }
+        }).requestAccessToken();
+    }
+
+    async function startScanning() {
+        const input = document.getElementById('folderIdInput').value;
+        const folderId = input.includes('id=') ? input.split('id=')[1] : (input.includes('/') ? input.split('/').pop() : input);
+        if (!accessToken) return alert("Sign In Required!");
+        await scanFolder(folderId);
+        localStorage.setItem('studyHub_Files', JSON.stringify(allFiles));
+        renderUI();
+    }
+
+    async function scanFolder(id, path = "") {
+        const resp = await gapi.client.drive.files.list({ q: `'${id}' in parents and trashed = false`, fields: 'files(id, name, mimeType, webViewLink, iconLink)' });
+        for (let f of resp.result.files) {
+            if (f.mimeType === 'application/vnd.google-apps.folder') {
+                await scanFolder(f.id, path + f.name + "/");
+            } else {
+                const tree = path.split('/').filter(p => p);
+                f.year = tree.find(p => /(spring|fall|summer)\s?\d{2}/i.test(p)) || tree[0] || 'Unsorted';
+                f.subject = tree[tree.indexOf(f.year) + 1] || 'General';
+                f.category = tree[tree.length - 1] || 'Files';
+                
+                const idx = allFiles.findIndex(x => x.id === f.id);
+                if (idx !== -1) allFiles[idx] = f; else allFiles.push(f);
+            }
+        }
+    }
+
+    function toggleNavStar() {
+        if (selYear === 'all' || selSub === 'all') return;
+        const bookmark = { year: selYear, sub: selSub, cat: selCat, label: `${selYear} > ${selSub}` };
+        const exists = navStars.findIndex(n => n.year === selYear && n.sub === selSub);
+        if (exists !== -1) navStars.splice(exists, 1); else navStars.push(bookmark);
+        localStorage.setItem('studyHub_NavStars', JSON.stringify(navStars));
+        renderUI();
+    }
+
+    function renderUI() {
+        const query = document.getElementById('searchBar').value.toLowerCase();
+        
+        document.getElementById('quickAccessSection').classList.toggle('hidden', navStars.length === 0);
+        document.getElementById('quickAccessGrid').innerHTML = navStars.map(n => `<button onclick="selYear='${n.year}';selSub='${n.sub}';selCat='${n.cat}';renderUI()" class="glass px-4 py-2 rounded-2xl text-[9px] font-bold whitespace-nowrap border-purple-500/30">📍 ${n.label}</button>`).join('');
+
+        const years = ['all', ...new Set(allFiles.map(f => f.year))];
+        document.getElementById('yearTabs').innerHTML = years.map(y => `<button onclick="selYear='${y}';selSub='all';renderUI()" class="px-5 py-2 rounded-2xl border border-gray-500/10 text-[10px] font-bold ${selYear===y?'active-btn':''}">${y.toUpperCase()}</button>`).join('');
+
+        const yearData = selYear === 'all' ? allFiles : allFiles.filter(f => f.year === selYear);
+        const subs = ['all', ...new Set(yearData.map(f => f.subject))];
+        document.getElementById('subjectSection').classList.toggle('hidden', selYear === 'all');
+        document.getElementById('subjectTabs').innerHTML = subs.map(s => `<button onclick="selSub='${s}';selCat='all';renderUI()" class="px-5 py-2 rounded-2xl border border-gray-500/10 text-[10px] font-bold ${selSub===s?'active-btn':''}">${s.toUpperCase()}</button>`).join('');
+
+        const subData = selSub === 'all' ? yearData : yearData.filter(f => f.subject === selSub);
+        const cats = ['all', ...new Set(subData.map(f => f.category))];
+        document.getElementById('typeSection').classList.toggle('hidden', selSub === 'all');
+        document.getElementById('typeTabs').innerHTML = cats.map(c => `<button onclick="selCat='${c}';renderUI()" class="px-5 py-2 rounded-2xl border border-gray-500/10 text-[10px] font-bold ${selCat===c?'active-btn':''}">${c.toUpperCase()}</button>`).join('');
+
+        const filtered = subData.filter(f => (selCat === 'all' || f.category === selCat) && f.name.toLowerCase().includes(query));
+        document.getElementById('fileGrid').innerHTML = filtered.map(f => `
+            <div class="glass file-card shadow-sm">
+                <div class="flex items-center gap-4 overflow-hidden flex-1" onclick="window.open('${f.webViewLink}')">
+                    <img src="${f.iconLink}" class="w-4 h-4 opacity-40 shrink-0">
+                    <div class="truncate">
+                        <p class="text-[12px] font-bold truncate">${f.name}</p>
+                        <p class="text-[8px] text-gray-500 uppercase tracking-widest">${f.year} • ${f.category}</p>
+                    </div>
+                </div>
+                <button onclick="stars.includes('${f.id}')?stars=stars.filter(s=>s!=='${f.id}'):stars.push('${f.id}'); localStorage.setItem('studyHub_Stars', JSON.stringify(stars)); renderUI();" class="text-xl ml-4 ${stars.includes(f.id)?'text-yellow-500':'text-gray-400'}">★</button>
+            </div>
+        `).join('');
+    }
+</script>
+</body>
+</html>
         <button onclick="saveSettings()" class="w-full bg-purple-600 p-3 rounded-xl text-[10px] font-bold text-white uppercase">Save Configuration</button>
         <button onclick="clearFilesOnly()" class="w-full mt-2 border border-red-500 text-red-500 p-3 rounded-xl text-[10px] font-bold uppercase">Clear Files Cache</button>
     </div>
