@@ -3,37 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>StudyHub AI - Final Fix</title>
+    <title>StudyHub AI - Nuclear Clean</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://apis.google.com/js/api.js" async defer></script>
     <style>
+        /* Force hide anything that isn't our app container */
+        body > *:not(#app-root) { display: none !important; opacity: 0 !important; pointer-events: none !important; }
+        #app-root { display: block !important; opacity: 1 !important; background: #0b0a12; min-height: 100vh; }
         :root { --accent: #7c6ff7; }
-        body { font-family: 'Poppins', sans-serif; background: #0b0a12; color: #ffffff; margin: 0; padding: 0; overflow-x: hidden; }
-        .glass { background: rgba(30, 28, 45, 0.98); border: 1px solid #2e2b45; backdrop-filter: blur(12px); border-radius: 20px; }
-        .active-btn { background: var(--accent) !important; color: white !important; }
-        .file-card { display: flex; align-items: center; justify-content: space-between; padding: 12px; margin-bottom: 8px; border-radius: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
+        body { background: #0b0a12; color: white; font-family: 'Poppins', sans-serif; margin: 0; }
+        .glass { background: rgba(30, 28, 45, 0.98); border: 1px solid #2e2b45; backdrop-filter: blur(10px); border-radius: 20px; }
+        .active-btn { background: var(--accent) !important; box-shadow: 0 0 15px rgba(124, 111, 247, 0.4); }
+        .file-card { display: flex; align-items: center; justify-content: space-between; padding: 12px; margin-bottom: 8px; border-radius: 16px; background: rgba(255,255,255,0.02); }
     </style>
 </head>
 <body>
 
-    <nav class="glass m-4 px-5 py-4 flex justify-between items-center sticky top-2 z-[100] shadow-xl">
+<div id="app-root">
+    <nav class="glass m-4 px-5 py-4 flex justify-between items-center sticky top-2 z-[100]">
         <h1 class="text-lg font-bold">StudyHub <span class="text-purple-500">AI</span></h1>
-        <div class="flex gap-4 items-center">
+        <div class="flex gap-4">
             <button onclick="toggleSettings()" class="text-xl">⚙️</button>
-            <button id="authBtn" onclick="handleAuthClick()" class="bg-purple-600 px-4 py-1.5 rounded-full text-[10px] font-black text-white uppercase">Connect</button>
+            <button id="authBtn" onclick="handleAuthClick()" class="bg-purple-600 px-4 py-1 rounded-full text-[10px] font-black uppercase">Connect</button>
         </div>
     </nav>
 
     <div id="settingsPanel" class="glass mx-4 p-6 hidden mb-6">
-        <input type="text" id="clientIdInput" placeholder="Client ID" class="w-full bg-black/20 border border-gray-600 p-3 rounded-xl mb-2 text-xs text-inherit outline-none">
-        <input type="password" id="apiKeyInput" placeholder="API Key" class="w-full bg-black/20 border border-gray-600 p-3 rounded-xl mb-4 text-xs text-white outline-none">
-        <button onclick="saveSettings()" class="w-full bg-purple-600 p-3 rounded-xl text-[10px] font-bold text-white uppercase mb-2">Save Config</button>
-        <button onclick="localStorage.clear(); location.reload();" class="w-full text-red-500 text-[10px] font-bold uppercase mt-2">Force Wipe Cache</button>
+        <input type="text" id="clientIdInput" placeholder="Client ID" class="w-full bg-black/40 border border-gray-700 p-3 rounded-xl mb-2 text-xs text-white outline-none">
+        <input type="password" id="apiKeyInput" placeholder="API Key" class="w-full bg-black/40 border border-gray-700 p-3 rounded-xl mb-4 text-xs text-white outline-none">
+        <button onclick="saveSettings()" class="w-full bg-purple-600 p-3 rounded-xl text-[10px] font-bold uppercase">Save & Refresh</button>
     </div>
 
+    <main class="px-4 max-w-2xl mx-auto">
+        <div class="glass p-5 mb-8">
+            <input type="text" id="folderIdInput" placeholder="Paste Folder Link" class="w-full bg-black/20 border border-gray-600 p-4 rounded-2xl mb-4 text-sm outline-none text-white">
+            <button onclick="startScanning()" class="w-full bg-white text-black font-black p-4 rounded-2xl text-[10px] uppercase mb-4">Sync Database</button>
+            <input type="text" id="searchBar" oninput="renderUI()" placeholder="🔍 Quick search..." class="w-full bg-black/20 border border-gray-600 p-4 rounded-2xl text-sm outline-none">
+        </div>
+
+        <div class="space-y-6">
+            <div id="yArea"> <span class="text-gray-500 text-[9px] font-black uppercase mb-2 block">1. Year</span> <div id="yearTabs" class="flex gap-2 overflow-x-auto"></div> </div>
+            <div id="sArea" class="hidden"> <span class="text-gray-500 text-[9px] font-black uppercase mb-2 block">2. Subject</span> <div id="subjectTabs" class="flex gap-2 overflow-x-auto"></div> </div>
+            <div id="cArea" class="hidden"> <span class="text-gray-500 text-[9px] font-black uppercase mb-2 block">3. Category</span> <div id="typeTabs" class="flex gap-2 overflow-x-auto"></div> </div>
+        </div>
+
+        <div id="fileGrid" class="mt-10 pb-20"></div>
+    </main>
+</div>
+
+<script>
+    // THE NUKE: Kill any text leak or extra elements
+    setInterval(() => {
+        document.querySelectorAll('body > *:not(#app-root):not(script)').forEach(el => el.remove());
+        const body = document.body;
+        for (let node of body.childNodes) { if (node.nodeType === 3) node.textContent = ''; }
+    }, 500);
+
+    let CONF = JSON.parse(localStorage.getItem('sh_v3')) || {ci:'', ak:''};
+    let FILES = JSON.parse(localStorage.getItem('sh_f3')) || [];
+    let stars = JSON.parse(localStorage.getItem('sh_s3')) || [];
+    let accToken = null;
+    let sY = 'all', sS = 'all', sC = 'all';
+
+    function toggleSettings() { document.getElementById('settingsPanel').classList.toggle('hidden'); }
+    function saveSettings() { CONF.ci = document.getElementById('clientIdInput').value; CONF.ak = document.getElementById('apiKeyInput').value; localStorage.setItem('sh_v3', JSON.stringify(CONF)); location.reload(); }
+
+    window.onload = () => {
+        document.getElementById('clientIdInput').value = CONF.ci;
+        document.getElementById('apiKeyInput').value = CONF.ak;
+        if (CONF.ak) gapi.load('client', () => gapi.client.init({apiKey: CONF.ak, discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"]}));
+        if (CONF.ci) google.accounts.oauth2.initTokenClient({client_id: CONF.ci, scope: 'https://www.googleapis.com/auth/drive.readonly', callback: (r) => {accToken = r.access_token; document.getElementById('authBtn').innerText = "ONLINE"; renderUI();}}).requestAccessToken({prompt: 'none'});
+        renderUI();
+    };
+
+    function handleAuthClick() { google.accounts.oauth2.initTokenClient({client_id: CONF.ci, scope: 'https://www.googleapis.com/auth/drive.readonly', callback: (r) => {accToken = r.access_token; renderUI();}}).requestAccessToken(); }
+
+    async function startScanning() {
+        const raw = document.getElementById('folderIdInput').value;
+        const id = raw.includes('id=') ? raw.split('id=')[1] : raw.split('/').pop();
+        if (!accToken) return alert("Connect Google first!");
+        await scan(id);
+        localStorage.setItem('sh_f3', JSON.stringify(FILES));
+        renderUI();
+    }
+
+    async function scan(id, path = "") {
+        const r = await gapi.client.drive.files.list({q: `'${id}' in parents and trashed = false`, fields: 'files(id, name, mimeType, webViewLink, iconLink)'});
+        for (let f of r.result.files) {
+            if (f.mimeType === 'application/vnd.google-apps.folder') await scan(f.id, path + f.name + "/");
+            else {
+                const t = path.split('/').filter(p => p);
+                f.year = t.find(p => /(spring|fall|summer)\s?\d{2}/i.test(p)) || t[0] || 'Other';
+                f.subject = t[t.indexOf(f.year) + 1] || 'General';
+                f.category = t[t.length - 1] || 'Files';
+                FILES.push(f);
+            }
+        }
+    }
+
+    function renderUI() {
+        const term = document.getElementById('searchBar').value.toLowerCase();
+        const years = ['all', ...new Set(FILES.map(f => f.year))];
+        document.getElementById('yearTabs').innerHTML = years.map(y => `<button onclick="sY='${y}';sS='all';renderUI()" class="px-5 py-2 rounded-2xl border border-gray-700 text-[10px] font-bold ${sY===y?'active-btn':''}">${y.toUpperCase()}</button>`).join('');
+
+        const yD = sY === 'all' ? FILES : FILES.filter(f => f.year === sY);
+        const subs = ['all', ...new Set(yD.map(f => f.subject))];
+        document.getElementById('sArea').classList.toggle('hidden', sY === 'all');
+        document.getElementById('subjectTabs').innerHTML = subs.map(s => `<button onclick="sS='${s}';sC='all';renderUI()" class="px-5 py-2 rounded-2xl border border-gray-700 text-[10px] font-bold ${sS===s?'active-btn':''}">${s.toUpperCase()}</button>`).join('');
+
+        const sD = sS === 'all' ? yD : yD.filter(f => f.subject === sS);
+        const cats = ['all', ...new Set(sD.map(f => f.category))];
+        document.getElementById('cArea').classList.toggle('hidden', sS === 'all');
+        document.getElementById('typeTabs').innerHTML = cats.map(c => `<button onclick="sC='${c}';renderUI()" class="px-5 py-2 rounded-2xl border border-gray-700 text-[10px] font-bold ${sC===c?'active-btn':''}">${c.toUpperCase()}</button>`).join('');
+
+        const final = sD.filter(f => (sC === 'all' || f.category === sC) && f.name.toLowerCase().includes(term));
+        document.getElementById('fileGrid').innerHTML = final.map(f => `
+            <div class="glass file-card">
+                <div class="flex items-center gap-4 overflow-hidden flex-1" onclick="window.open('${f.webViewLink}')">
+                    <img src="${f.iconLink}" class="w-4 h-4 opacity-40">
+                    <div class="truncate">
+                        <p class="text-[12px] font-bold truncate">${f.name}</p>
+                        <p class="text-[8px] text-gray-500 uppercase">${f.year} • ${f.category}</p>
+                    </div>
+                </div>
+                <button onclick="stars.includes('${f.id}')?stars=stars.filter(s=>s!=='${f.id}'):stars.push('${f.id}'); localStorage.setItem('sh_s3', JSON.stringify(stars)); renderUI();" class="text-xl ml-4 ${stars.includes(f.id)?'text-yellow-500':'text-gray-400'}">★</button>
+            </div>
+        `).join('');
+    }
+</script>
+</body>
+</html>
     <main id="appBody" class="px-4 max-w-2xl mx-auto">
         <div class="glass p-5 mb-8 shadow-xl">
             <div class="flex gap-2 mb-4">
