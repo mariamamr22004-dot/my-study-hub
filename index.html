@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StudyHub AI - Ultimate Edition</title>
+    <title>StudyHub AI - Tree View</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -12,10 +12,9 @@
         :root { --accent: #7c6ff7; --bg: #0f0e17; --surface: #1a1828; }
         body { font-family: 'Poppins', sans-serif; background: var(--bg); color: white; }
         .glass { background: rgba(26, 24, 40, 0.8); backdrop-filter: blur(12px); border: 1px solid #2e2b45; }
-        .star-active { color: #f9ca24 !important; }
+        .step-active { background: var(--accent); color: white; border-color: var(--accent); transform: scale(1.05); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        input { transition: all 0.3s; }
-        input:focus { border-color: var(--accent) !important; box-shadow: 0 0 10px rgba(124, 111, 247, 0.2); }
+        .star-active { color: #f9ca24 !important; }
     </style>
 </head>
 <body class="min-h-screen pb-20">
@@ -24,16 +23,173 @@
         <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-blue-400">🎓 StudyHub AI</h1>
         <div class="flex gap-2">
             <button onclick="toggleSettings()" class="bg-gray-800 p-2 rounded-lg text-xs">⚙️ Settings</button>
-            <button id="authBtn" onclick="handleAuthClick()" class="bg-purple-600 px-4 py-1 rounded-lg text-sm font-semibold">Connect Drive</button>
+            <button id="authBtn" onclick="handleAuthClick()" class="bg-purple-600 px-4 py-1 rounded-lg text-sm font-semibold">Connect</button>
         </div>
     </nav>
 
     <div id="settingsPanel" class="glass m-4 p-4 rounded-xl hidden border-yellow-500/30">
         <input type="text" id="clientIdInput" placeholder="Client ID" class="w-full bg-black/40 border border-gray-700 p-2 rounded mb-2 text-xs">
         <input type="password" id="apiKeyInput" placeholder="API Key" class="w-full bg-black/40 border border-gray-700 p-2 rounded mb-2 text-xs">
-        <button onclick="saveSettings()" class="w-full bg-yellow-600 p-2 rounded text-xs font-bold">Save & Reload</button>
+        <button onclick="saveSettings()" class="w-full bg-yellow-600 p-2 rounded text-xs font-bold">Save Config</button>
     </div>
 
+    <main class="container mx-auto p-4 max-w-4xl">
+        <div class="glass rounded-2xl p-4 mb-6">
+            <input type="text" id="folderIdInput" placeholder="Drive Folder ID" class="w-full bg-black/40 border border-gray-700 p-3 rounded-xl mb-3 text-sm outline-none">
+            <button onclick="startScanning()" class="w-full bg-green-500 text-black font-bold p-3 rounded-xl hover:bg-green-400 mb-4 transition">Sync Data</button>
+            <input type="text" id="mainSearch" oninput="renderUI()" placeholder="Quick search..." class="w-full bg-purple-900/10 border border-purple-500/30 p-3 rounded-xl text-sm outline-none">
+        </div>
+
+        <div id="starredSection" class="hidden mb-6 px-2">
+            <h2 class="text-yellow-500 text-[10px] font-bold mb-3 tracking-widest uppercase">⭐ Favorites</h2>
+            <div id="starredGrid" class="grid gap-2"></div>
+        </div>
+
+        <hr class="border-gray-800 my-6">
+
+        <section class="mb-6">
+            <h2 class="text-[10px] text-gray-500 font-bold mb-3 tracking-widest uppercase">Step 1: Select Year</h2>
+            <div id="yearTabs" class="flex gap-2 overflow-x-auto pb-2 no-scrollbar"></div>
+        </section>
+
+        <section id="subjectSection" class="mb-6 hidden">
+            <h2 class="text-[10px] text-gray-500 font-bold mb-3 tracking-widest uppercase">Step 2: Select Subject</h2>
+            <div id="subjectTabs" class="flex gap-2 overflow-x-auto pb-2 no-scrollbar"></div>
+        </section>
+
+        <section id="categorySection" class="mb-6 hidden">
+            <h2 class="text-[10px] text-gray-500 font-bold mb-3 tracking-widest uppercase">Step 3: Type</h2>
+            <div id="categoryTabs" class="flex gap-2 overflow-x-auto pb-2 no-scrollbar"></div>
+        </section>
+
+        <div id="fileGrid" class="grid gap-3 pt-4 border-t border-gray-900"></div>
+    </main>
+
+    <script>
+        let CONFIG = JSON.parse(localStorage.getItem('studyHub_Config')) || { clientId: '', apiKey: '' };
+        let allFiles = JSON.parse(localStorage.getItem('studyHub_Files')) || [];
+        let stars = JSON.parse(localStorage.getItem('studyHub_Stars')) || [];
+        let tokenClient, accessToken = null;
+        
+        let selYear = 'all', selSubject = 'all', selCat = 'all';
+
+        const typeKeywords = {
+            final: ['final', 'exam', 'فاينل'],
+            solution: ['solution', 'sol', 'حل', 'answer'],
+            quiz: ['quiz', 'test', 'كويز'],
+            midterm: ['midterm', 'mid'],
+            summary: ['summary', 'sum', 'notes', 'ملخص'],
+            lab: ['lab', 'practical', 'لاب'],
+            sheet: ['sheet', 'assignment', 'شيت']
+        };
+
+        function gapiLoaded() { if(CONFIG.apiKey) gapi.load('client', () => gapi.client.init({ apiKey: CONFIG.apiKey, discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"] })); }
+        function gisLoaded() { if(CONFIG.clientId) tokenClient = google.accounts.oauth2.initTokenClient({ client_id: CONFIG.clientId, scope: 'https://www.googleapis.com/auth/drive.readonly', callback: (resp) => { accessToken = resp.access_token; document.getElementById('authBtn').innerText = "Live ✅"; } }); }
+        window.onload = () => { gapiLoaded(); gisLoaded(); renderUI(); };
+
+        function saveSettings() { CONFIG.clientId = document.getElementById('clientIdInput').value; CONFIG.apiKey = document.getElementById('apiKeyInput').value; localStorage.setItem('studyHub_Config', JSON.stringify(CONFIG)); location.reload(); }
+        function toggleSettings() { document.getElementById('settingsPanel').classList.toggle('hidden'); }
+        function handleAuthClick() { tokenClient.requestAccessToken({ prompt: 'consent' }); }
+
+        async function startScanning() {
+            const input = document.getElementById('folderIdInput').value;
+            const folderId = input.includes('id=') ? input.split('id=')[1] : (input.includes('/') ? input.split('/').pop() : input);
+            if (!folderId) return;
+            allFiles = [];
+            await scanFolder(folderId);
+            localStorage.setItem('studyHub_Files', JSON.stringify(allFiles));
+            renderUI();
+        }
+
+        async function scanFolder(folderId, path = "", parentFolderName = "") {
+            const response = await gapi.client.drive.files.list({ q: `'${folderId}' in parents and trashed = false`, fields: 'files(id, name, mimeType, webViewLink, iconLink)' });
+            for (let file of response.result.files) {
+                if (file.mimeType === 'application/vnd.google-apps.folder') {
+                    await scanFolder(file.id, path + file.name + " / ", file.name);
+                } else {
+                    file.category = detectCategory(file.name, parentFolderName);
+                    file.year = detectYear(path);
+                    file.subject = detectSubject(path, file.year);
+                    file.path = path;
+                    allFiles.push(file);
+                }
+            }
+        }
+
+        function detectCategory(name, parent) {
+            name = (name + " " + parent).toLowerCase();
+            for (const [type, keys] of Object.entries(typeKeywords)) {
+                if (keys.some(k => name.includes(k))) return type;
+            }
+            return 'other';
+        }
+
+        function detectYear(path) {
+            const match = path.match(/(spring|fall|summer)\s?\d{2}/i);
+            return match ? match[0].toUpperCase() : 'UNKNOWN YEAR';
+        }
+
+        function detectSubject(path, year) {
+            const parts = path.split(' / ').filter(p => p.trim() !== "" && p !== year);
+            return parts.length > 0 ? parts[parts.length - 1] : 'GENERAL';
+        }
+
+        function toggleStar(id, e) { e.stopPropagation(); stars.includes(id) ? stars = stars.filter(s => s !== id) : stars.push(id); localStorage.setItem('studyHub_Stars', JSON.stringify(stars)); renderUI(); }
+
+        function renderUI() {
+            const term = document.getElementById('mainSearch').value.toLowerCase();
+            
+            // 1. Starred
+            const starredFiles = allFiles.filter(f => stars.includes(f.id));
+            document.getElementById('starredGrid').innerHTML = starredFiles.map(f => fileCard(f)).join('');
+            document.getElementById('starredSection').classList.toggle('hidden', starredFiles.length === 0);
+
+            // 2. Year Tabs
+            const years = ['all', ...new Set(allFiles.map(f => f.year))];
+            document.getElementById('yearTabs').innerHTML = years.map(y => `<button onclick="selYear='${y}';selSubject='all';selCat='all';renderUI()" class="px-4 py-1 rounded-full border border-gray-800 text-[10px] whitespace-nowrap ${selYear===y?'step-active':''}">${y}</button>`).join('');
+
+            // 3. Subject Tabs (Depends on Year)
+            const filteredByYear = selYear === 'all' ? allFiles : allFiles.filter(f => f.year === selYear);
+            const subjects = ['all', ...new Set(filteredByYear.map(f => f.subject))];
+            document.getElementById('subjectSection').classList.toggle('hidden', selYear === 'all' && allFiles.length === 0);
+            document.getElementById('subjectTabs').innerHTML = subjects.map(s => `<button onclick="selSubject='${s}';selCat='all';renderUI()" class="px-4 py-1 rounded-full border border-gray-800 text-[10px] whitespace-nowrap ${selSubject===s?'step-active':''}">${s}</button>`).join('');
+
+            // 4. Category Tabs (Depends on Subject)
+            const filteredBySub = selSubject === 'all' ? filteredByYear : filteredByYear.filter(f => f.subject === selSubject);
+            const cats = ['all', ...new Set(filteredBySub.map(f => f.category))];
+            document.getElementById('categorySection').classList.toggle('hidden', selSubject === 'all');
+            document.getElementById('categoryTabs').innerHTML = cats.map(c => `<button onclick="selCat='${c}';renderUI()" class="px-4 py-1 rounded-full border border-gray-800 text-[10px] whitespace-nowrap ${selCat===c?'step-active':''}">${c.toUpperCase()}</button>`).join('');
+
+            // 5. Main Grid
+            const finalFiles = filteredBySub.filter(f => {
+                const matchesCat = selCat === 'all' || f.category === selCat;
+                const matchesSearch = f.name.toLowerCase().includes(term);
+                return matchesCat && matchesSearch;
+            });
+            document.getElementById('fileGrid').innerHTML = finalFiles.map(f => fileCard(f)).join('');
+        }
+
+        function fileCard(f) {
+            const isStarred = stars.includes(f.id);
+            return `
+                <div class="glass p-3 rounded-xl flex justify-between items-center hover:border-purple-500 transition" onclick="window.open('${f.webViewLink}')">
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <img src="${f.iconLink}" class="w-4 h-4">
+                        <div class="truncate">
+                            <p class="text-xs font-semibold truncate">${f.name}</p>
+                            <p class="text-[8px] text-gray-500 uppercase tracking-tighter">${f.path}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[7px] px-1.5 py-0.5 rounded bg-purple-900/30 text-purple-400 border border-purple-800 uppercase">${f.category}</span>
+                        <button onclick="toggleStar('${f.id}', event)" class="text-sm ${isStarred?'star-active':'text-gray-700'}">★</button>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
     <main class="container mx-auto p-4 max-w-4xl">
         <div class="glass rounded-2xl p-4 mb-6">
             <input type="text" id="folderIdInput" placeholder="Drive Folder ID or Link" class="w-full bg-black/40 border border-gray-700 p-3 rounded-xl mb-3 text-sm">
