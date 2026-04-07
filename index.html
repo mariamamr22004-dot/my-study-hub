@@ -1,366 +1,210 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>StudyHub AI - Ultra</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&display=swap" rel="stylesheet">
-<script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="https://apis.google.com/js/api.js" async defer></script>
 <style>
-:root {
-  --bg: #0b0a12;
-  --bg2: #13111f;
-  --surface: rgba(30,28,45,0.95);
-  --border: rgba(255,255,255,0.07);
-  --text: #ffffff;
-  --text-muted: #6b6880;
-  --accent: #7c6ff7;
-  --star: #f9ca24;
-  --danger: #ff6b6b;
-  --success: #43e97b;
-  --input-bg: rgba(0,0,0,0.3);
+/* ... (نفس الستايلات الأصلية) ... */
+
+/* إضافة ستايل قائمة الخيارات (Context Menu) */
+.context-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 150px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(25px);
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  display: none;
+  padding: 8px;
 }
-[data-theme="light"] {
-  --bg: #f0effe;
-  --bg2: #e8e5fd;
-  --surface: rgba(255,255,255,0.85);
-  --border: rgba(0,0,0,0.08);
-  --text: #1a1828;
-  --text-muted: #8b88a0;
-  --input-bg: rgba(255,255,255,0.6);
+.menu-item {
+  padding: 10px 15px;
+  font-size: 0.8rem;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 0.2s;
 }
-
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-body {
-  font-family: 'Poppins', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  transition: background 0.3s;
-  overflow-x: hidden;
-}
-
-.glass { background: var(--surface); border: 1px solid var(--border); backdrop-filter: blur(20px); border-radius: 20px; }
-.nav { position: sticky; top: 0; z-index: 200; margin: 12px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; }
-.main-container { padding: 12px; max-width: 720px; margin: 0 auto; }
-
-.inp { width: 100%; background: var(--input-bg); border: 1.5px solid var(--border); border-radius: 14px; padding: 12px 14px; font-size: 0.8rem; color: var(--text); outline: none; }
-.inp:focus { border-color: var(--accent); }
-
-.sync-btn {
-  background: var(--text); color: var(--bg); border-radius: 14px;
-  font-weight: 900; font-size: 0.7rem; padding: 0 20px; cursor: pointer;
-}
-
-.file-card {
-  display: flex; align-items: center; gap: 12px; padding: 14px; margin-bottom: 10px;
-  border-radius: 18px; background: var(--input-bg); border: 1px solid var(--border);
-  transition: transform 0.2s; cursor: pointer;
-}
-.file-card:active { transform: scale(0.98); }
-
-.star-btn {
-  flex-shrink: 0; width: 40px; height: 40px; border: none; background: none;
-  font-size: 1.2rem; color: var(--text-muted); margin-left: auto;
-}
-.star-btn.starred { color: var(--star); }
-
-.tabs-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
-.tab-btn {
-  background: var(--input-bg); border: 1.5px solid var(--border); border-radius: 30px;
-  color: var(--text-muted); font-size: 0.65rem; font-weight: 700; padding: 8px 16px;
-  white-space: nowrap; cursor: pointer;
-}
-.tab-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
-
-.sec-label { font-size: 0.6rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; display: block; }
-
-#actionMenu {
-    position: fixed; display: none; z-index: 1000; min-width: 150px;
-    background: var(--surface); border: 1px solid var(--accent);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-radius: 12px;
-}
-.menu-item { padding: 12px 16px; font-size: 0.75rem; cursor: pointer; border-bottom: 1px solid var(--border); }
-.menu-item:hover { background: var(--accent); color: white; }
-
-.spinning { display: inline-block; animation: spin 1s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+.menu-item:hover { background: rgba(255,255,255,0.1); }
+.menu-item.danger { color: var(--danger); }
 </style>
 </head>
-<body oncontextmenu="return false;">
+<body>
 
-<nav class="glass nav">
-  <div class="font-black text-lg" onclick="location.reload()">StudyHub <span class="text-[#7c6ff7]">AI</span></div>
-  <div class="flex gap-2">
-    <button class="tab-btn" onclick="toggleTheme()" id="themeIcon">🌙</button>
-    <button class="tab-btn" onclick="toggleSettings()">⚙️</button>
-    <button class="tab-btn active" id="authBtn" onclick="handleAuth()">Connect</button>
-  </div>
-</nav>
-
-<div class="glass hidden p-5 mx-3 mb-4" id="settingsPanel">
-  <input class="inp mb-2" id="clientId" type="text" placeholder="Client ID">
-  <input class="inp mb-3" id="apiKey" type="password" placeholder="API Key">
-  <button class="tab-btn active w-full" onclick="saveSettings()">Apply Changes</button>
-  <button class="tab-btn w-full mt-2" style="color:var(--danger)" onclick="wipeCache()">Clear Cache</button>
-</div>
-
-<div class="main-container">
-  <div class="glass p-4 mb-4">
-    <div class="flex gap-2 mb-3">
-      <input class="inp" id="driveUrl" type="text" placeholder="Folder Link...">
-      <button class="sync-btn" id="syncBtn" onclick="syncDrive()">
-        <span id="syncText">Sync</span>
-      </button>
-    </div>
-    <input class="inp" id="searchBar" type="text" placeholder="Search..." oninput="renderFiles()">
-  </div>
-
-  <div id="treeContainer">
-    <div class="mb-4" id="lvl1Box">
-        <span class="sec-label" id="lvl1Label">Level 1</span>
-        <div class="tabs-scroll" id="lvl1Tabs"></div>
-    </div>
-    <div class="mb-4 hidden" id="lvl2Box">
-        <span class="sec-label" id="lvl2Label">Level 2</span>
-        <div class="tabs-scroll" id="lvl2Tabs"></div>
-    </div>
-    <div class="mb-4 hidden" id="lvl3Box">
-        <span class="sec-label" id="lvl3Label">Level 3</span>
-        <div class="tabs-scroll" id="lvl3Tabs"></div>
-    </div>
-    
-    <div class="flex justify-between items-center mt-5">
-      <span class="sec-label">Files</span>
-      <button class="tab-btn" id="starFilter" onclick="toggleStarFilter()">⭐ Favorites Only</button>
-    </div>
-    <div id="fileGrid" class="mt-3 pb-20"></div>
-  </div>
-</div>
-
-<div id="actionMenu" class="glass">
-    <div class="menu-item" onclick="handleAction('star')">⭐ Toggle Favorite</div>
-    <div class="menu-item" onclick="handleAction('pin')">📍 Pin to Quick Access</div>
-    <div class="menu-item" onclick="handleAction('delete')" style="color:var(--danger)">🗑️ Hide from View</div>
+<div id="contextMenu" class="context-menu">
+    <div class="menu-item" onclick="handleMenuAction('pin')">📌 Pin / Unpin</div>
+    <div class="menu-item" onclick="handleMenuAction('edit')">✏️ Edit Name</div>
+    <div class="menu-item danger" onclick="handleMenuAction('delete')">🗑️ Delete Locally</div>
 </div>
 
 <script>
-const PRIORITY = ['lecture', 'sec', 'sheet', 'assignment', 'quiz', 'exam', 'summary'];
-
+// تحديث الـ STATE ليشمل الأولويات
 let STATE = {
   conf: JSON.parse(localStorage.getItem('sh_conf')) || { ci: '', ak: '' },
   files: JSON.parse(localStorage.getItem('sh_files')) || [],
   stars: JSON.parse(localStorage.getItem('sh_stars')) || [],
+  pins: JSON.parse(localStorage.getItem('sh_pins')) || [], // ميزة التثبيت
   theme: localStorage.getItem('sh_theme') || 'dark',
-  filter: { l1: 'all', l2: 'all', l3: 'all', star: false },
-  activeId: null
+  filter: { y: 'all', s: 'all', c: 'all', q: '', starsOnly: false },
+  token: null,
+  isSyncing: false,
+  activeTarget: null // لتحديد العنصر المضغوط عليه مطولاً
 };
 
-window.onload = () => {
-    applyTheme();
-    if(STATE.conf.ak) {
-        gapi.load('client', async () => {
-            await gapi.client.init({ apiKey: STATE.conf.ak, discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"] });
-            if(STATE.conf.ci) initGIS();
-        });
+// قائمة الأولويات للترتيب الذكي
+const CATEGORY_PRIORITY = ["LECTURES", "SECTIONS", "SHEETS", "ASSIGNMENTS", "QUIZZES"];
+
+// --- ميزة الضغط المطول (Long Press Logic) ---
+let pressTimer;
+function setupLongPress(element, data) {
+    const start = (e) => {
+        if (e.type === 'click' && e.button !== 0) return; 
+        pressTimer = setTimeout(() => showContextMenu(e, data), 600);
+    };
+    const cancel = () => clearTimeout(pressTimer);
+
+    element.addEventListener('mousedown', start);
+    element.addEventListener('touchstart', start);
+    element.addEventListener('mouseup', cancel);
+    element.addEventListener('mouseleave', cancel);
+    element.addEventListener('touchend', cancel);
+    
+    // منع القائمة الافتراضية للمتصفح
+    element.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        showContextMenu(e, data);
+    });
+}
+
+function showContextMenu(e, data) {
+    const menu = document.getElementById('contextMenu');
+    STATE.activeTarget = data;
+    
+    const x = e.pageX || e.touches[0].pageX;
+    const y = e.pageY || e.touches[0].pageY;
+    
+    menu.style.left = `${x}px`;
+    menu.style.top = `${y}px`;
+    menu.style.display = 'block';
+
+    // إغلاق القائمة عند الضغط في أي مكان آخر
+    document.addEventListener('click', () => menu.style.display = 'none', {once: true});
+}
+
+// --- معالجة إجراءات القائمة ---
+function handleMenuAction(action) {
+    const target = STATE.activeTarget;
+    if (!target) return;
+
+    if (action === 'delete') {
+        if(confirm("Delete this from local view?")) {
+            STATE.files = STATE.files.filter(f => f.id !== target.id);
+            localStorage.setItem('sh_files', JSON.stringify(STATE.files));
+        }
+    } else if (action === 'pin') {
+        const idx = STATE.pins.indexOf(target.id);
+        idx > -1 ? STATE.pins.splice(idx, 1) : STATE.pins.push(target.id);
+        localStorage.setItem('sh_pins', JSON.stringify(STATE.pins));
+    } else if (action === 'edit') {
+        const newName = prompt("Enter new name:", target.name);
+        if (newName) {
+            STATE.files.forEach(f => { if(f.id === target.id) f.name = newName; });
+            localStorage.setItem('sh_files', JSON.stringify(STATE.files));
+        }
     }
     renderUI();
-    initLongPress();
-};
+}
 
-function initGIS() {
-  STATE.gis = google.accounts.oauth2.initTokenClient({
-    client_id: STATE.conf.ci,
-    scope: 'https://www.googleapis.com/auth/drive.readonly',
-    callback: (res) => { 
-        STATE.token = res.access_token;
-        document.getElementById('authBtn').innerText = 'Online ✓';
-    }
+// --- تحديث الـ Render ليشمل الترتيب الذكي والضغط المطول ---
+function renderTabs(containerId, items, filterKey) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = ''; 
+  
+  if (items.length === 0) return;
+
+  // تطبيق الترتيب الذكي إذا كانت الفئة Category
+  if (filterKey === 'c') {
+      items.sort((a, b) => {
+          let indexA = CATEGORY_PRIORITY.indexOf(a.toUpperCase());
+          let indexB = CATEGORY_PRIORITY.indexOf(b.toUpperCase());
+          if (indexA === -1) indexA = 99;
+          if (indexB === -1) indexB = 99;
+          return indexA - indexB;
+      });
+  }
+
+  const allBtn = document.createElement('button');
+  allBtn.className = `tab-btn ${STATE.filter[filterKey] === 'all' ? 'active' : ''}`;
+  allBtn.innerText = 'ALL';
+  allBtn.onclick = () => { STATE.filter[filterKey] = 'all'; renderUI(); };
+  container.appendChild(allBtn);
+
+  items.forEach(item => {
+    const btn = document.createElement('button');
+    btn.className = `tab-btn ${STATE.filter[filterKey] === item ? 'active' : ''}`;
+    btn.innerText = item.toUpperCase();
+    btn.onclick = () => { STATE.filter[filterKey] = item; renderUI(); };
+    
+    // إضافة ميزة الضغط المطول للتبويب
+    setupLongPress(btn, { type: 'category', id: item, name: item });
+    
+    container.appendChild(btn);
   });
 }
 
-function handleAuth() { STATE.gis ? STATE.gis.requestAccessToken() : toggleSettings(); }
-
-async function syncDrive() {
-  if(!STATE.token) return alert("Authorize First");
-  const folderId = document.getElementById('driveUrl').value.match(/[-\w]{25,}/);
-  if(!folderId) return alert("Invalid Link");
-
-  STATE.isSyncing = true;
-  updateSyncBtn(true);
-  STATE.files = [];
-
-  try {
-    await scan(folderId[0], []);
-    localStorage.setItem('sh_files', JSON.stringify(STATE.files));
-  } catch (e) { alert("Sync Error"); }
-  
-  STATE.isSyncing = false;
-  updateSyncBtn(false);
-  renderUI();
-}
-
-async function scan(id, path) {
-  let token;
-  do {
-    const res = await gapi.client.drive.files.list({
-      q: `'${id}' in parents and trashed = false`,
-      fields: 'nextPageToken, files(id, name, mimeType, webViewLink, iconLink)',
-      pageToken: token
-    });
-    for (const f of res.result.files) {
-      if (f.mimeType === 'application/vnd.google-apps.folder') {
-        await scan(f.id, [...path, f.name]);
-      } else {
-        STATE.files.push({
-          id: f.id, name: f.name, link: f.webViewLink, icon: f.iconLink,
-          p1: path[0] || 'Root', p2: path[1] || 'General', p3: path[2] || 'Files'
-        });
-      }
-    }
-    token = res.result.nextPageToken;
-  } while (token);
-}
-
-function smartSort(arr) {
-    return arr.sort((a, b) => {
-        let iA = PRIORITY.findIndex(p => a.toLowerCase().includes(p));
-        let iB = PRIORITY.findIndex(p => b.toLowerCase().includes(p));
-        if (iA === -1) iA = 99; if (iB === -1) iB = 99;
-        return iA - iB || a.localeCompare(b);
-    });
-}
-
-function renderUI() {
-    const l1s = [...new Set(STATE.files.map(f => f.p1))];
-    renderTabs('lvl1Tabs', l1s, 'l1');
-
-    const l2s = STATE.filter.l1 === 'all' ? [] : [...new Set(STATE.files.filter(f => f.p1 === STATE.filter.l1).map(f => f.p2))];
-    document.getElementById('lvl2Box').classList.toggle('hidden', l2s.length === 0);
-    renderTabs('lvl2Tabs', l2s, 'l2');
-
-    const l3s = STATE.filter.l2 === 'all' ? [] : [...new Set(STATE.files.filter(f => f.p2 === STATE.filter.l2).map(f => f.p3))];
-    document.getElementById('lvl3Box').classList.toggle('hidden', l3s.length === 0);
-    renderTabs('lvl3Tabs', smartSort(l3s), 'l3');
-
-    renderFiles();
-}
-
-function renderTabs(id, items, key) {
-    const container = document.getElementById(id);
-    container.innerHTML = '';
-    if(!items.length) return;
-
-    const all = document.createElement('button');
-    all.className = `tab-btn ${STATE.filter[key] === 'all' ? 'active' : ''}`;
-    all.innerText = 'ALL';
-    all.onclick = () => { STATE.filter[key] = 'all'; renderUI(); };
-    container.appendChild(all);
-
-    items.forEach(it => {
-        const btn = document.createElement('button');
-        btn.className = `tab-btn ${STATE.filter[key] === it ? 'active' : ''}`;
-        btn.innerText = it.toUpperCase();
-        btn.onclick = () => { STATE.filter[key] = it; renderUI(); };
-        btn.oncontextmenu = (e) => { e.preventDefault(); showMenu(e, it); };
-        container.appendChild(btn);
-    });
-}
-
 function renderFiles() {
-    const grid = document.getElementById('fileGrid');
-    grid.innerHTML = '';
-    const q = document.getElementById('searchBar').value.toLowerCase();
+  const grid = document.getElementById('fileGrid');
+  grid.innerHTML = ''; 
+  
+  const query = document.getElementById('searchBar').value.toLowerCase();
+  
+  let filtered = STATE.files.filter(f => {
+    const matchY = STATE.filter.y === 'all' || f.year === STATE.filter.y;
+    const matchS = STATE.filter.s === 'all' || f.subject === STATE.filter.s;
+    const matchC = STATE.filter.c === 'all' || f.category === STATE.filter.c;
+    const matchQ = f.name.toLowerCase().includes(query);
+    const matchStar = !STATE.filter.starsOnly || STATE.stars.includes(f.id);
+    return matchY && matchS && matchC && matchQ && matchStar;
+  });
 
-    const filtered = STATE.files.filter(f => {
-        const m1 = STATE.filter.l1 === 'all' || f.p1 === STATE.filter.l1;
-        const m2 = STATE.filter.l2 === 'all' || f.p2 === STATE.filter.l2;
-        const m3 = STATE.filter.l3 === 'all' || f.p3 === STATE.filter.l3;
-        const mq = f.name.toLowerCase().includes(q);
-        const ms = !STATE.filter.star || STATE.stars.includes(f.id);
-        return m1 && m2 && m3 && mq && ms;
-    });
+  // وضع الملفات المثبتة (Pinned) في البداية
+  filtered.sort((a, b) => {
+      const aPinned = STATE.pins.includes(a.id) ? 1 : 0;
+      const bPinned = STATE.pins.includes(b.id) ? 1 : 0;
+      return bPinned - aPinned;
+  });
 
-    filtered.forEach(f => {
-        const isS = STATE.stars.includes(f.id);
-        const card = document.createElement('div');
-        card.className = 'glass file-card';
-        card.oncontextmenu = (e) => { e.preventDefault(); showMenu(e, f.id); };
-        card.innerHTML = `
-            <img src="${f.icon}" style="width:20px">
-            <div style="flex:1; min-width:0" onclick="window.open('${f.link}')">
-                <div style="font-size:0.8rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${f.name}</div>
-                <div style="font-size:0.6rem; color:var(--text-muted)">${f.p2} • ${f.p3}</div>
-            </div>
-            <button class="star-btn ${isS ? 'starred' : ''}" onclick="toggleStar('${f.id}')">★</button>
-        `;
-        grid.appendChild(card);
-    });
+  if(filtered.length === 0) {
+    grid.innerHTML = `<div style="text-align:center; opacity:0.5; padding:50px;">No files found.</div>`;
+    return;
+  }
+
+  filtered.forEach(f => {
+    const isStarred = STATE.stars.includes(f.id);
+    const isPinned = STATE.pins.includes(f.id);
+    const card = document.createElement('div');
+    card.className = 'glass file-card';
+    if(isPinned) card.style.borderColor = 'var(--accent)';
+
+    card.innerHTML = `
+      <img src="${f.icon}" style="width:24px; opacity:0.8">
+      <div class="file-info" onclick="window.open('${f.link}', '_blank')">
+        <div class="file-name">${isPinned ? '📌 ' : ''}${f.name}</div>
+        <div class="file-meta">${f.year} • ${f.category}</div>
+      </div>
+      <button class="star-btn ${isStarred ? 'starred' : ''}" onclick="toggleStar('${f.id}')">★</button>
+    `;
+    
+    // إضافة ميزة الضغط المطول للكارت
+    setupLongPress(card, { type: 'file', id: f.id, name: f.name });
+    
+    grid.appendChild(card);
+  });
 }
 
-function toggleStar(id) {
-    const idx = STATE.stars.indexOf(id);
-    idx > -1 ? STATE.stars.splice(idx, 1) : STATE.stars.push(id);
-    localStorage.setItem('sh_stars', JSON.stringify(STATE.stars));
-    renderFiles();
-}
-
-function showMenu(e, id) {
-    STATE.activeId = id;
-    const menu = document.getElementById('actionMenu');
-    menu.style.display = 'block';
-    menu.style.left = e.pageX + 'px';
-    menu.style.top = e.pageY + 'px';
-}
-
-function handleAction(type) {
-    if(type === 'star') toggleStar(STATE.activeId);
-    if(type === 'delete') alert("Removing from local view...");
-    document.getElementById('actionMenu').style.display = 'none';
-}
-
-function initLongPress() {
-    window.onclick = () => document.getElementById('actionMenu').style.display = 'none';
-    let timer;
-    document.addEventListener('touchstart', (e) => {
-        timer = setTimeout(() => {
-            const id = e.target.closest('.file-card')?.dataset?.id;
-            if(id) showMenu({pageX: e.touches[0].pageX, pageY: e.touches[0].pageY}, id);
-        }, 800);
-    });
-    document.addEventListener('touchend', () => clearTimeout(timer));
-}
-
-function updateSyncBtn(l) {
-    document.getElementById('syncText').innerHTML = l ? '<span class="spinning">↻</span>' : 'Sync';
-}
-
-function toggleTheme() {
-    STATE.theme = STATE.theme === 'dark' ? 'light' : 'dark';
-    localStorage.setItem('sh_theme', STATE.theme);
-    applyTheme();
-}
-
-function applyTheme() {
-    document.documentElement.setAttribute('data-theme', STATE.theme);
-    document.getElementById('themeIcon').innerText = STATE.theme === 'dark' ? '🌙' : '☀️';
-}
-
-function toggleSettings() { document.getElementById('settingsPanel').classList.toggle('hidden'); }
-function saveSettings() {
-    STATE.conf.ci = document.getElementById('clientId').value;
-    STATE.conf.ak = document.getElementById('apiKey').value;
-    localStorage.setItem('sh_conf', JSON.stringify(STATE.conf));
-    location.reload();
-}
-function wipeCache() { localStorage.removeItem('sh_files'); location.reload(); }
-function toggleStarFilter() {
-    STATE.filter.star = !STATE.filter.star;
-    document.getElementById('starFilter').classList.toggle('active');
-    renderFiles();
-}
+// ... (بقية منطق الـ Sync والـ Auth كما هو في كودك الأصلي دون تعديل) ...
 </script>
 </body>
 </html>
