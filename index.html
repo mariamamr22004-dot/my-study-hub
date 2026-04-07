@@ -3,13 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>StudyHub AI - Professional</title>
+<title>StudyHub AI - Ultra</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://apis.google.com/js/api.js" async defer></script>
 <style>
-/* ===== THEME VARIABLES ===== */
 :root {
   --bg: #0b0a12;
   --bg2: #13111f;
@@ -18,7 +17,6 @@
   --text: #ffffff;
   --text-muted: #6b6880;
   --accent: #7c6ff7;
-  --accent-glow: rgba(124,111,247,0.25);
   --star: #f9ca24;
   --danger: #ff6b6b;
   --success: #43e97b;
@@ -34,364 +32,335 @@
   --input-bg: rgba(255,255,255,0.6);
 }
 
-/* ===== BASE STYLES ===== */
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 body {
   font-family: 'Poppins', sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
-  transition: all 0.3s ease;
+  transition: background 0.3s;
   overflow-x: hidden;
 }
 
-/* Background Animated Blobs */
-.blobs { position: fixed; inset: 0; pointer-events: none; z-index: -1; }
-.blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.15; }
-
-/* ===== LAYOUT ===== */
-.glass { background: var(--surface); border: 1px solid var(--border); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 20px; }
-
+.glass { background: var(--surface); border: 1px solid var(--border); backdrop-filter: blur(20px); border-radius: 20px; }
 .nav { position: sticky; top: 0; z-index: 200; margin: 12px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; }
-.nav-logo { font-size: 1.1rem; font-weight: 900; letter-spacing: -0.5px; }
-.nav-logo span { color: var(--accent); }
-
 .main-container { padding: 12px; max-width: 720px; margin: 0 auto; }
 
-/* ===== SYNC & SEARCH ===== */
-.sync-card { padding: 18px; margin-bottom: 16px; }
-.inp { width: 100%; background: var(--input-bg); border: 1.5px solid var(--border); border-radius: 14px; padding: 12px 14px; font-size: 0.8rem; color: var(--text); outline: none; transition: border 0.2s; }
+.inp { width: 100%; background: var(--input-bg); border: 1.5px solid var(--border); border-radius: 14px; padding: 12px 14px; font-size: 0.8rem; color: var(--text); outline: none; }
 .inp:focus { border-color: var(--accent); }
 
 .sync-btn {
-  background: var(--text); color: var(--bg); border: none; border-radius: 14px;
+  background: var(--text); color: var(--bg); border-radius: 14px;
   font-weight: 900; font-size: 0.7rem; padding: 0 20px; cursor: pointer;
-  transition: all 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
-.sync-btn.syncing { background: var(--accent); color: white; opacity: 0.8; }
 
-/* ===== FILE CARDS (CRITICAL FIX) ===== */
 .file-card {
   display: flex; align-items: center; gap: 12px; padding: 14px; margin-bottom: 10px;
   border-radius: 18px; background: var(--input-bg); border: 1px solid var(--border);
-  transition: all 0.2s; cursor: pointer; position: relative; overflow: hidden;
+  transition: transform 0.2s; cursor: pointer;
 }
-.file-card:hover { border-color: var(--accent); transform: translateY(-2px); }
-
-.file-info { flex: 1; min-width: 0; }
-.file-name { font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.file-meta { font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; margin-top: 2px; }
+.file-card:active { transform: scale(0.98); }
 
 .star-btn {
-  flex-shrink: 0; /* Prevents disappearing */
-  width: 40px; height: 40px; border: none; background: none;
-  font-size: 1.2rem; cursor: pointer; color: var(--text-muted);
-  display: flex; align-items: center; justify-content: center;
-  margin-left: auto; /* Always right */
-  transition: color 0.2s;
+  flex-shrink: 0; width: 40px; height: 40px; border: none; background: none;
+  font-size: 1.2rem; color: var(--text-muted); margin-left: auto;
 }
 .star-btn.starred { color: var(--star); }
 
-/* ===== TABS & NAVIGATION ===== */
 .tabs-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
-.tabs-scroll::-webkit-scrollbar { display: none; }
 .tab-btn {
   background: var(--input-bg); border: 1.5px solid var(--border); border-radius: 30px;
   color: var(--text-muted); font-size: 0.65rem; font-weight: 700; padding: 8px 16px;
-  white-space: nowrap; cursor: pointer; transition: all 0.2s;
+  white-space: nowrap; cursor: pointer;
 }
-.tab-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+.tab-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
 
 .sec-label { font-size: 0.6rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; display: block; }
 
-/* ===== SETTINGS ===== */
-.settings-panel { margin: 8px 12px; padding: 20px; display: none; }
-.settings-panel.open { display: block; animation: slideDown 0.3s ease; }
-@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+#actionMenu {
+    position: fixed; display: none; z-index: 1000; min-width: 150px;
+    background: var(--surface); border: 1px solid var(--accent);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-radius: 12px;
+}
+.menu-item { padding: 12px 16px; font-size: 0.75rem; cursor: pointer; border-bottom: 1px solid var(--border); }
+.menu-item:hover { background: var(--accent); color: white; }
 
-/* ===== UTILS ===== */
 .spinning { display: inline-block; animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-
-/* No side scroll fix */
-html, body { max-width: 100vw; overflow-x: hidden; }
 </style>
 </head>
-<body>
-
-<div class="blobs">
-  <div class="blob" style="width: 300px; height: 300px; background: var(--accent); top: -100px; left: -100px;"></div>
-  <div class="blob" style="width: 250px; height: 250px; background: var(--success); bottom: -50px; right: -50px;"></div>
-</div>
+<body oncontextmenu="return false;">
 
 <nav class="glass nav">
-  <div class="nav-logo" onclick="location.reload()" style="cursor:pointer">StudyHub <span>AI</span></div>
-  <div style="display:flex; gap:8px;">
+  <div class="font-black text-lg" onclick="location.reload()">StudyHub <span class="text-[#7c6ff7]">AI</span></div>
+  <div class="flex gap-2">
     <button class="tab-btn" onclick="toggleTheme()" id="themeIcon">🌙</button>
     <button class="tab-btn" onclick="toggleSettings()">⚙️</button>
     <button class="tab-btn active" id="authBtn" onclick="handleAuth()">Connect</button>
   </div>
 </nav>
 
-<div class="glass settings-panel" id="settingsPanel">
-  <span class="sec-label">Google API Config</span>
+<div class="glass hidden p-5 mx-3 mb-4" id="settingsPanel">
   <input class="inp mb-2" id="clientId" type="text" placeholder="Client ID">
   <input class="inp mb-3" id="apiKey" type="password" placeholder="API Key">
-  <button class="tab-btn active w-full" onclick="saveSettings()">Save & Reload</button>
-  <button class="tab-btn w-full mt-2" style="color:var(--danger)" onclick="wipeCache()">Wipe Files Cache</button>
+  <button class="tab-btn active w-full" onclick="saveSettings()">Apply Changes</button>
+  <button class="tab-btn w-full mt-2" style="color:var(--danger)" onclick="wipeCache()">Clear Cache</button>
 </div>
 
 <div class="main-container">
-  <div class="glass sync-card">
-    <div style="display:flex; gap:10px; margin-bottom:12px;">
-      <input class="inp" id="driveUrl" type="text" placeholder="Paste Google Drive Folder Link...">
+  <div class="glass p-4 mb-4">
+    <div class="flex gap-2 mb-3">
+      <input class="inp" id="driveUrl" type="text" placeholder="Folder Link...">
       <button class="sync-btn" id="syncBtn" onclick="syncDrive()">
         <span id="syncText">Sync</span>
-        <span id="fileCount" style="font-size:0.5rem; opacity:0.6">0 files</span>
       </button>
     </div>
-    <input class="inp" id="searchBar" type="text" placeholder="Search in cache..." oninput="renderFiles()">
+    <input class="inp" id="searchBar" type="text" placeholder="Search..." oninput="renderFiles()">
   </div>
 
-  <div id="browseSection">
-    <div class="mb-4" id="yearContainer">
-      <span class="sec-label">Step 1: Year</span>
-      <div class="tabs-scroll" id="yearTabs"></div>
+  <div id="treeContainer">
+    <div class="mb-4" id="lvl1Box">
+        <span class="sec-label" id="lvl1Label">Level 1</span>
+        <div class="tabs-scroll" id="lvl1Tabs"></div>
     </div>
-    <div class="mb-4 hidden" id="subjectContainer">
-      <span class="sec-label">Step 2: Subject</span>
-      <div class="tabs-scroll" id="subjectTabs"></div>
+    <div class="mb-4 hidden" id="lvl2Box">
+        <span class="sec-label" id="lvl2Label">Level 2</span>
+        <div class="tabs-scroll" id="lvl2Tabs"></div>
     </div>
-    <div class="mb-4 hidden" id="catContainer">
-      <span class="sec-label">Step 3: Category</span>
-      <div class="tabs-scroll" id="catTabs"></div>
+    <div class="mb-4 hidden" id="lvl3Box">
+        <span class="sec-label" id="lvl3Label">Level 3</span>
+        <div class="tabs-scroll" id="lvl3Tabs"></div>
     </div>
     
-    <div style="display:flex; justify-content: space-between; align-items:center; margin-top:20px;">
-      <span class="sec-label" id="gridTitle">Files</span>
-      <button class="tab-btn" id="starFilterBtn" onclick="toggleStarFilter()">⭐ Show Favorites</button>
+    <div class="flex justify-between items-center mt-5">
+      <span class="sec-label">Files</span>
+      <button class="tab-btn" id="starFilter" onclick="toggleStarFilter()">⭐ Favorites Only</button>
     </div>
-    <div id="fileGrid" style="margin-top:10px; padding-bottom:100px;"></div>
+    <div id="fileGrid" class="mt-3 pb-20"></div>
   </div>
 </div>
 
+<div id="actionMenu" class="glass">
+    <div class="menu-item" onclick="handleAction('star')">⭐ Toggle Favorite</div>
+    <div class="menu-item" onclick="handleAction('pin')">📍 Pin to Quick Access</div>
+    <div class="menu-item" onclick="handleAction('delete')" style="color:var(--danger)">🗑️ Hide from View</div>
+</div>
+
 <script>
-// --- STATE MANAGEMENT ---
+const PRIORITY = ['lecture', 'sec', 'sheet', 'assignment', 'quiz', 'exam', 'summary'];
+
 let STATE = {
   conf: JSON.parse(localStorage.getItem('sh_conf')) || { ci: '', ak: '' },
   files: JSON.parse(localStorage.getItem('sh_files')) || [],
   stars: JSON.parse(localStorage.getItem('sh_stars')) || [],
   theme: localStorage.getItem('sh_theme') || 'dark',
-  filter: { y: 'all', s: 'all', c: 'all', q: '', starsOnly: false },
-  token: null,
-  isSyncing: false
+  filter: { l1: 'all', l2: 'all', l3: 'all', star: false },
+  activeId: null
 };
 
-// --- INITIALIZATION ---
 window.onload = () => {
-  applyTheme();
-  document.getElementById('clientId').value = STATE.conf.ci;
-  document.getElementById('apiKey').value = STATE.conf.ak;
-  updateCounter();
-  
-  if(STATE.conf.ak) {
-    gapi.load('client', async () => {
-      await gapi.client.init({ apiKey: STATE.conf.ak, discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"] });
-      if(STATE.conf.ci) initGIS();
-    });
-  }
-  renderUI();
+    applyTheme();
+    if(STATE.conf.ak) {
+        gapi.load('client', async () => {
+            await gapi.client.init({ apiKey: STATE.conf.ak, discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"] });
+            if(STATE.conf.ci) initGIS();
+        });
+    }
+    renderUI();
+    initLongPress();
 };
 
 function initGIS() {
-  const client = google.accounts.oauth2.initTokenClient({
+  STATE.gis = google.accounts.oauth2.initTokenClient({
     client_id: STATE.conf.ci,
     scope: 'https://www.googleapis.com/auth/drive.readonly',
-    callback: (res) => {
-      STATE.token = res.access_token;
-      document.getElementById('authBtn').innerText = 'Connected ✓';
-      document.getElementById('authBtn').style.background = 'var(--success)';
+    callback: (res) => { 
+        STATE.token = res.access_token;
+        document.getElementById('authBtn').innerText = 'Online ✓';
     }
   });
-  STATE.gis = client;
 }
 
 function handleAuth() { STATE.gis ? STATE.gis.requestAccessToken() : toggleSettings(); }
 
-// --- SYNC CORE (FIXED HIERARCHY) ---
 async function syncDrive() {
-  if(STATE.isSyncing || !STATE.token) return alert("Connect Drive First!");
-  
-  const folderUrl = document.getElementById('driveUrl').value;
-  const folderId = folderUrl.match(/[-\w]{25,}/);
-  if(!folderId) return alert("Invalid Folder ID/Link");
+  if(!STATE.token) return alert("Authorize First");
+  const folderId = document.getElementById('driveUrl').value.match(/[-\w]{25,}/);
+  if(!folderId) return alert("Invalid Link");
 
   STATE.isSyncing = true;
-  STATE.files = [];
   updateSyncBtn(true);
+  STATE.files = [];
 
   try {
-    await scanRecursive(folderId[0], []);
+    await scan(folderId[0], []);
     localStorage.setItem('sh_files', JSON.stringify(STATE.files));
-    alert(`Success! Found ${STATE.files.length} files.`);
-  } catch (e) {
-    console.error(e);
-    alert("Sync Error. Check API keys.");
-  } finally {
-    STATE.isSyncing = false;
-    updateSyncBtn(false);
-    renderUI();
-  }
+  } catch (e) { alert("Sync Error"); }
+  
+  STATE.isSyncing = false;
+  updateSyncBtn(false);
+  renderUI();
 }
 
-async function scanRecursive(id, pathArray) {
-  let pageToken;
+async function scan(id, path) {
+  let token;
   do {
     const res = await gapi.client.drive.files.list({
       q: `'${id}' in parents and trashed = false`,
       fields: 'nextPageToken, files(id, name, mimeType, webViewLink, iconLink)',
-      pageSize: 1000,
-      pageToken
+      pageToken: token
     });
-    
-    const items = res.result.files;
-    for (const item of items) {
-      if (item.mimeType === 'application/vnd.google-apps.folder') {
-        // Build hierarchy based on folder nesting
-        await scanRecursive(item.id, [...pathArray, item.name]);
+    for (const f of res.result.files) {
+      if (f.mimeType === 'application/vnd.google-apps.folder') {
+        await scan(f.id, [...path, f.name]);
       } else {
         STATE.files.push({
-          id: item.id,
-          name: item.name,
-          link: item.webViewLink,
-          icon: item.iconLink,
-          year: pathArray[0] || 'Unsorted',
-          subject: pathArray[1] || 'General',
-          category: pathArray[2] || 'Files'
+          id: f.id, name: f.name, link: f.webViewLink, icon: f.iconLink,
+          p1: path[0] || 'Root', p2: path[1] || 'General', p3: path[2] || 'Files'
         });
       }
     }
-    pageToken = res.result.nextPageToken;
-  } while (pageToken);
+    token = res.result.nextPageToken;
+  } while (token);
 }
 
-// --- UI RENDERING ---
+function smartSort(arr) {
+    return arr.sort((a, b) => {
+        let iA = PRIORITY.findIndex(p => a.toLowerCase().includes(p));
+        let iB = PRIORITY.findIndex(p => b.toLowerCase().includes(p));
+        if (iA === -1) iA = 99; if (iB === -1) iB = 99;
+        return iA - iB || a.localeCompare(b);
+    });
+}
+
 function renderUI() {
-  renderTabs('yearTabs', [...new Set(STATE.files.map(f => f.year))], 'y');
-  
-  const subjects = STATE.filter.y === 'all' ? [] : [...new Set(STATE.files.filter(f => f.year === STATE.filter.y).map(f => f.subject))];
-  document.getElementById('subjectContainer').classList.toggle('hidden', subjects.length === 0);
-  renderTabs('subjectTabs', subjects, 's');
+    const l1s = [...new Set(STATE.files.map(f => f.p1))];
+    renderTabs('lvl1Tabs', l1s, 'l1');
 
-  const cats = STATE.filter.s === 'all' ? [] : [...new Set(STATE.files.filter(f => f.subject === STATE.filter.s).map(f => f.category))];
-  document.getElementById('catContainer').classList.toggle('hidden', cats.length === 0);
-  renderTabs('catTabs', cats, 'c');
+    const l2s = STATE.filter.l1 === 'all' ? [] : [...new Set(STATE.files.filter(f => f.p1 === STATE.filter.l1).map(f => f.p2))];
+    document.getElementById('lvl2Box').classList.toggle('hidden', l2s.length === 0);
+    renderTabs('lvl2Tabs', l2s, 'l2');
 
-  renderFiles();
-  updateCounter();
+    const l3s = STATE.filter.l2 === 'all' ? [] : [...new Set(STATE.files.filter(f => f.p2 === STATE.filter.l2).map(f => f.p3))];
+    document.getElementById('lvl3Box').classList.toggle('hidden', l3s.length === 0);
+    renderTabs('lvl3Tabs', smartSort(l3s), 'l3');
+
+    renderFiles();
 }
 
-function renderTabs(containerId, items, filterKey) {
-  const container = document.getElementById(containerId);
-  container.innerHTML = ''; // SANITIZATION
-  
-  if (items.length === 0) return;
+function renderTabs(id, items, key) {
+    const container = document.getElementById(id);
+    container.innerHTML = '';
+    if(!items.length) return;
 
-  const allBtn = document.createElement('button');
-  allBtn.className = `tab-btn ${STATE.filter[filterKey] === 'all' ? 'active' : ''}`;
-  allBtn.innerText = 'ALL';
-  allBtn.onclick = () => { STATE.filter[filterKey] = 'all'; renderUI(); };
-  container.appendChild(allBtn);
+    const all = document.createElement('button');
+    all.className = `tab-btn ${STATE.filter[key] === 'all' ? 'active' : ''}`;
+    all.innerText = 'ALL';
+    all.onclick = () => { STATE.filter[key] = 'all'; renderUI(); };
+    container.appendChild(all);
 
-  items.forEach(item => {
-    const btn = document.createElement('button');
-    btn.className = `tab-btn ${STATE.filter[filterKey] === item ? 'active' : ''}`;
-    btn.innerText = item.toUpperCase();
-    btn.onclick = () => { STATE.filter[filterKey] = item; renderUI(); };
-    container.appendChild(btn);
-  });
+    items.forEach(it => {
+        const btn = document.createElement('button');
+        btn.className = `tab-btn ${STATE.filter[key] === it ? 'active' : ''}`;
+        btn.innerText = it.toUpperCase();
+        btn.onclick = () => { STATE.filter[key] = it; renderUI(); };
+        btn.oncontextmenu = (e) => { e.preventDefault(); showMenu(e, it); };
+        container.appendChild(btn);
+    });
 }
 
 function renderFiles() {
-  const grid = document.getElementById('fileGrid');
-  grid.innerHTML = ''; // SANITIZATION
-  
-  const query = document.getElementById('searchBar').value.toLowerCase();
-  
-  const filtered = STATE.files.filter(f => {
-    const matchY = STATE.filter.y === 'all' || f.year === STATE.filter.y;
-    const matchS = STATE.filter.s === 'all' || f.subject === STATE.filter.s;
-    const matchC = STATE.filter.c === 'all' || f.category === STATE.filter.c;
-    const matchQ = f.name.toLowerCase().includes(query);
-    const matchStar = !STATE.filter.starsOnly || STATE.stars.includes(f.id);
-    return matchY && matchS && matchC && matchQ && matchStar;
-  });
+    const grid = document.getElementById('fileGrid');
+    grid.innerHTML = '';
+    const q = document.getElementById('searchBar').value.toLowerCase();
 
-  if(filtered.length === 0) {
-    grid.innerHTML = `<div style="text-align:center; opacity:0.5; padding:50px;">No files found. Try syncing.</div>`;
-    return;
-  }
+    const filtered = STATE.files.filter(f => {
+        const m1 = STATE.filter.l1 === 'all' || f.p1 === STATE.filter.l1;
+        const m2 = STATE.filter.l2 === 'all' || f.p2 === STATE.filter.l2;
+        const m3 = STATE.filter.l3 === 'all' || f.p3 === STATE.filter.l3;
+        const mq = f.name.toLowerCase().includes(q);
+        const ms = !STATE.filter.star || STATE.stars.includes(f.id);
+        return m1 && m2 && m3 && mq && ms;
+    });
 
-  filtered.forEach(f => {
-    const isStarred = STATE.stars.includes(f.id);
-    const card = document.createElement('div');
-    card.className = 'glass file-card';
-    card.innerHTML = `
-      <img src="${f.icon}" style="width:24px; opacity:0.8">
-      <div class="file-info" onclick="window.open('${f.link}', '_blank')">
-        <div class="file-name">${f.name}</div>
-        <div class="file-meta">${f.year} • ${f.category}</div>
-      </div>
-      <button class="star-btn ${isStarred ? 'starred' : ''}" onclick="toggleStar('${f.id}')">★</button>
-    `;
-    grid.appendChild(card);
-  });
+    filtered.forEach(f => {
+        const isS = STATE.stars.includes(f.id);
+        const card = document.createElement('div');
+        card.className = 'glass file-card';
+        card.oncontextmenu = (e) => { e.preventDefault(); showMenu(e, f.id); };
+        card.innerHTML = `
+            <img src="${f.icon}" style="width:20px">
+            <div style="flex:1; min-width:0" onclick="window.open('${f.link}')">
+                <div style="font-size:0.8rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${f.name}</div>
+                <div style="font-size:0.6rem; color:var(--text-muted)">${f.p2} • ${f.p3}</div>
+            </div>
+            <button class="star-btn ${isS ? 'starred' : ''}" onclick="toggleStar('${f.id}')">★</button>
+        `;
+        grid.appendChild(card);
+    });
 }
 
-// --- LOGIC HELPERS ---
 function toggleStar(id) {
-  const index = STATE.stars.indexOf(id);
-  index > -1 ? STATE.stars.splice(index, 1) : STATE.stars.push(id);
-  localStorage.setItem('sh_stars', JSON.stringify(STATE.stars));
-  renderFiles();
+    const idx = STATE.stars.indexOf(id);
+    idx > -1 ? STATE.stars.splice(idx, 1) : STATE.stars.push(id);
+    localStorage.setItem('sh_stars', JSON.stringify(STATE.stars));
+    renderFiles();
 }
 
-function toggleStarFilter() {
-  STATE.filter.starsOnly = !STATE.filter.starsOnly;
-  document.getElementById('starFilterBtn').classList.toggle('active');
-  renderFiles();
+function showMenu(e, id) {
+    STATE.activeId = id;
+    const menu = document.getElementById('actionMenu');
+    menu.style.display = 'block';
+    menu.style.left = e.pageX + 'px';
+    menu.style.top = e.pageY + 'px';
 }
 
-function updateCounter() { document.getElementById('fileCount').innerText = `${STATE.files.length} files`; }
-
-function updateSyncBtn(loading) {
-  const btn = document.getElementById('syncBtn');
-  document.getElementById('syncText').innerHTML = loading ? '<span class="spinning">↻</span>' : 'Sync';
-  btn.classList.toggle('syncing', loading);
+function handleAction(type) {
+    if(type === 'star') toggleStar(STATE.activeId);
+    if(type === 'delete') alert("Removing from local view...");
+    document.getElementById('actionMenu').style.display = 'none';
 }
 
-function saveSettings() {
-  STATE.conf.ci = document.getElementById('clientId').value;
-  STATE.conf.ak = document.getElementById('apiKey').value;
-  localStorage.setItem('sh_conf', JSON.stringify(STATE.conf));
-  location.reload();
+function initLongPress() {
+    window.onclick = () => document.getElementById('actionMenu').style.display = 'none';
+    let timer;
+    document.addEventListener('touchstart', (e) => {
+        timer = setTimeout(() => {
+            const id = e.target.closest('.file-card')?.dataset?.id;
+            if(id) showMenu({pageX: e.touches[0].pageX, pageY: e.touches[0].pageY}, id);
+        }, 800);
+    });
+    document.addEventListener('touchend', () => clearTimeout(timer));
 }
 
-function toggleSettings() { document.getElementById('settingsPanel').classList.toggle('open'); }
-
-function wipeCache() { localStorage.removeItem('sh_files'); location.reload(); }
+function updateSyncBtn(l) {
+    document.getElementById('syncText').innerHTML = l ? '<span class="spinning">↻</span>' : 'Sync';
+}
 
 function toggleTheme() {
-  STATE.theme = STATE.theme === 'dark' ? 'light' : 'dark';
-  localStorage.setItem('sh_theme', STATE.theme);
-  applyTheme();
+    STATE.theme = STATE.theme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('sh_theme', STATE.theme);
+    applyTheme();
 }
 
 function applyTheme() {
-  document.documentElement.setAttribute('data-theme', STATE.theme);
-  document.getElementById('themeIcon').innerText = STATE.theme === 'dark' ? '🌙' : '☀️';
+    document.documentElement.setAttribute('data-theme', STATE.theme);
+    document.getElementById('themeIcon').innerText = STATE.theme === 'dark' ? '🌙' : '☀️';
+}
+
+function toggleSettings() { document.getElementById('settingsPanel').classList.toggle('hidden'); }
+function saveSettings() {
+    STATE.conf.ci = document.getElementById('clientId').value;
+    STATE.conf.ak = document.getElementById('apiKey').value;
+    localStorage.setItem('sh_conf', JSON.stringify(STATE.conf));
+    location.reload();
+}
+function wipeCache() { localStorage.removeItem('sh_files'); location.reload(); }
+function toggleStarFilter() {
+    STATE.filter.star = !STATE.filter.star;
+    document.getElementById('starFilter').classList.toggle('active');
+    renderFiles();
 }
 </script>
 </body>
-                                             </html>
-
+</html>
