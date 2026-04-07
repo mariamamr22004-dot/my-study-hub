@@ -3,37 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>StudyHub AI - Clean Edition</title>
+    <title>StudyHub AI - Ultimate Clean</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://apis.google.com/js/api.js" async defer></script>
     <style>
         :root { --accent: #7c6ff7; }
-        .dark { --bg: #0b0a12; --text: #ffffff; --card: rgba(30, 28, 45, 0.95); --border: #2e2b45; }
-        .light { --bg: #f3f4f6; --text: #1f2937; --card: #ffffff; --border: #e5e7eb; }
-        body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); transition: 0.3s; margin: 0; padding: 0; overflow-x: hidden; }
-        .glass { background: var(--card); border: 1px solid var(--border); backdrop-filter: blur(10px); }
-        .active-btn { background: var(--accent) !important; color: white !important; box-shadow: 0 4px 12px rgba(124, 111, 247, 0.3); }
+        .dark { --bg: #0b0a12; --text: #ffffff; --card: rgba(30, 28, 45, 0.98); --border: #2e2b45; }
+        .light { --bg: #f9fafb; --text: #111827; --card: #ffffff; --border: #e5e7eb; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; width: 100%; margin: 0; }
+        .glass { background: var(--card); border: 1px solid var(--border); backdrop-filter: blur(12px); border-radius: 24px; }
+        .active-btn { background: var(--accent) !important; color: white !important; }
+        /* Fix for Star position and Scroll */
+        .file-card { display: flex; align-items: center; justify-content: space-between; padding: 14px; margin-bottom: 10px; width: 100%; box-sizing: border-box; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .file-card { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-radius: 18px; margin-bottom: 8px; width: 100%; box-sizing: border-box; }
-        #main-wrapper { min-height: 100vh; display: flex; flex-direction: column; }
     </style>
 </head>
 <body class="dark">
 
-<div id="main-wrapper">
-    <nav class="glass sticky top-0 z-50 px-5 py-4 flex justify-between items-center shadow-lg">
-        <h1 class="text-lg font-bold tracking-tight">StudyHub <span class="text-purple-500">AI</span></h1>
+    <nav class="glass m-4 px-5 py-4 flex justify-between items-center sticky top-2 z-[100] shadow-2xl">
+        <h1 class="text-lg font-bold">StudyHub <span class="text-purple-500">AI</span></h1>
         <div class="flex gap-4 items-center">
-            <button onclick="toggleMode()" class="text-xl">🌓</button>
-            <button onclick="toggleSettings()" class="text-xl opacity-70">⚙️</button>
-            <button id="authBtn" onclick="handleAuthClick()" class="bg-purple-600 px-3 py-1 rounded-full text-[9px] font-black text-white uppercase">Sign In</button>
+            <button onclick="toggleTheme()" class="text-xl">🌓</button>
+            <button onclick="toggleSettings()" class="text-xl">⚙️</button>
+            <button id="authBtn" onclick="handleAuthClick()" class="bg-purple-600 px-4 py-1.5 rounded-full text-[10px] font-black text-white uppercase">Connect</button>
         </div>
     </nav>
 
-    <div id="settingsPanel" class="glass m-4 p-5 rounded-3xl hidden shadow-2xl">
-        <p class="text-[10px] text-purple-400 font-bold mb-3 uppercase tracking-widest">System Configuration</p>
+    <div id="settingsPanel" class="glass mx-4 p-6 hidden mb-6 border-purple-500/30">
+        <h3 class="text-[10px] font-black uppercase text-purple-400 mb-4">Database Settings</h3>
+        <input type="text" id="clientIdInput" placeholder="Client ID" class="w-full bg-black/20 border border-gray-600 p-3 rounded-xl mb-2 text-xs text-inherit outline-none">
+        <input type="password" id="apiKeyInput" placeholder="API Key" class="w-full bg-black/20 border border-gray-600 p-3 rounded-xl mb-4 text-xs text-inherit outline-none">
+        <button onclick="saveSettings()" class="w-full bg-purple-600 p-3 rounded-xl text-[10px] font-bold text-white uppercase mb-2">Save Keys</button>
+        <button onclick="fullSystemReset()" class="w-full bg-red-600/20 text-red-500 p-3 rounded-xl text-[10px] font-bold uppercase border border-red-500/20">Wipe All & Deep Clean</button>
+    </div>
+
+    <main id="app-content" class="px-4 max-w-2xl mx-auto">
+        <div class="glass p-5 mb-8 shadow-xl">
+            <div class="flex gap-2 mb-4">
+                <input type="text" id="folderIdInput" placeholder="Paste Drive Link / ID" class="flex-1 bg-black/5 border border-gray-400 p-4 rounded-2xl text-sm outline-none text-inherit">
+                <button onclick="startScanning()" class="bg-white text-black font-black px-6 rounded-2xl text-[10px] uppercase shadow-lg active:scale-95">Sync</button>
+            </div>
+            <input type="text" id="searchBar" oninput="renderUI()" placeholder="🔍 Search folders or files..." class="w-full bg-black/5 border border-gray-400 p-4 rounded-2xl text-sm outline-none text-inherit">
+        </div>
+
+        <div class="space-y-6">
+            <section>
+                <div class="flex justify-between items-center mb-3 px-1">
+                    <span class="text-gray-500 text-[9px] font-black uppercase tracking-widest">Level 1: Year</span>
+                    <button onclick="toggleNavStar()" class="text-[9px] text-purple-500 font-bold">★ PIN SUBJECT</button>
+                </div>
+                <div id="yearTabs" class="flex gap-2 overflow-x-auto no-scrollbar"></div>
+            </section>
+
+            <section id="subjectSection" class="hidden">
+                <span class="text-gray-500 text-[9px] font-black uppercase block mb-3 px-1">Level 2: Subject</span>
+                <div id="subjectTabs" class="flex gap-2 overflow-x-auto no-scrollbar"></div>
+            </section>
+
+            <section id="typeSection" class="hidden">
+                <span class="text-gray-500 text-[9px] font-black uppercase block mb-3 px-1">Level 3: Category</span>
+                <div id="typeTabs" class="flex gap-2 overflow-x-auto no-scrollbar"></div>
+            </section>
+        </div>
+
+        <div id="quickAccessSection" class="hidden mt-10">
+            <h2 class="text-purple-500 text-[9px] font-black mb-4 uppercase tracking-[3px] px-1">Your Pins</h2>
+            <div id="quickAccessGrid" class="flex gap-2 overflow-x-auto no-scrollbar"></div>
+        </div>
+
+        <div id="fileGrid" class="mt-10 pb-24 space-y-3 border-t border-gray-500/10 pt-8"></div>
+    </main>
+
+    <script>
+        let CONFIG = JSON.parse(localStorage.getItem('sh_conf')) || { ci: '', ak: '' };
+        let allFiles = JSON.parse(localStorage.getItem('sh_files')) || [];
+        let stars = JSON.parse(localStorage.getItem('sh_stars')) || [];
+        let navStars = JSON.parse(localStorage.getItem('sh_nstars')) || []; 
+        let accessToken = null;
+        let sY = 'all', sS = 'all', sC = 'all';
+
+        function toggleTheme() { document.body.classList.toggle('dark'); document.body.classList.toggle('light'); }
+        function toggleSettings() { document.getElementById('settingsPanel').classList.toggle('hidden'); }
+        function saveSettings() { CONFIG.ci = document.getElementById('clientIdInput').value; CONFIG.ak = document.getElementById('apiKeyInput').value; localStorage.setItem('sh_conf', JSON.stringify(CONFIG)); location.reload(); }
+        
+        function fullSystemReset() {
+            if(confirm("This will clear all data and fix the layout. Continue?")) {
+                localStorage.clear();
+                window.location.reload(true); // Force reload from server
+            }
+        }
+
+        window.onload = () => {
+            // Anti-Glitch: Remove any elements that aren't inside our app-content or nav
+            document.querySelectorAll('body > :not(#app-content):not(nav):not(#settingsPanel):not(script)').forEach(el => el.remove());
+            
+            document.getElementById('clientIdInput').value = CONFIG.ci;
+            document.getElementById('apiKeyInput').value = CONFIG.ak;
+            if (CONFIG.ak) gapi.load('client', () => gapi.client.init({ apiKey: CONFIG.ak, discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"] }));
+            if (CONFIG.ci) {
+                google.accounts.oauth2.initTokenClient({
+                    client_id: CONFIG.ci, scope: 'https://www.googleapis.com/auth/drive.readonly',
+                    callback: (resp) => { accessToken = resp.access_token; document.getElementById('authBtn').innerText = "LIVE ✅"; renderUI(); }
+                }).requestAccessToken({ prompt: 'none' });
+            }
+            renderUI();
+        };
+
+        function handleAuthClick() {
+            google.accounts.oauth2.initTokenClient({
+                client_id: CONFIG.ci, scope: 'https://www.googleapis.com/auth/drive.readonly',
+                callback: (resp) => { accessToken = resp.access_token; renderUI(); }
+            }).requestAccessToken();
+        }
+
+        async function startScanning() {
+            const input = document.getElementById('folderIdInput').value;
+            const folderId = input.includes('id=') ? input.split('id=')[1] : (input.includes('/') ? input.split('/').pop() : input);
+            if (!accessToken) return alert("Please Connect first!");
+            await scanFolder(folderId);
+            localStorage.setItem('sh_files', JSON.stringify(allFiles));
+            renderUI();
+        }
+
+        async function scanFolder(id, path = "") {
+            const resp = await gapi.client.drive.files.list({ q: `'${id}' in parents and trashed = false`, fields: 'files(id, name, mimeType, webViewLink, iconLink)' });
+            for (let f of resp.result.files) {
+                if (f.mimeType === 'application/vnd.google-apps.folder') {
+                    await scanFolder(f.id, path + f.name + "/");
+                } else {
+                    const tree = path.split('/').filter(p => p);
+                    f.year = tree.find(p => /(spring|fall|summer)\s?\d{2}/i.test(p)) || tree[0] || 'Misc';
+                    f.subject = tree[tree.indexOf(f.year) + 1] || 'General';
+                    f.category = tree[tree.length - 1] || 'Files';
+                    const idx = allFiles.findIndex(x => x.id === f.id);
+                    if (idx !== -1) allFiles[idx] = f; else allFiles.push(f);
+                }
+            }
+        }
+
+        function toggleNavStar() {
+            if (sY === 'all' || sS === 'all') return;
+            const b = { year: sY, sub: sS, label: `${sY} > ${sS}` };
+            const ex = navStars.findIndex(n => n.year === sY && n.sub === sS);
+            if (ex !== -1) navStars.splice(ex, 1); else navStars.push(b);
+            localStorage.setItem('sh_nstars', JSON.stringify(navStars));
+            renderUI();
+        }
+
+        function renderUI() {
+            const q = document.getElementById('searchBar').value.toLowerCase();
+            document.getElementById('quickAccessSection').classList.toggle('hidden', navStars.length === 0);
+            document.getElementById('quickAccessGrid').innerHTML = navStars.map(n => `<button onclick="sY='${n.year}';sS='${n.sub}';sC='all';renderUI()" class="glass px-4 py-2 text-[9px] font-bold whitespace-nowrap border-purple-500/30">📍 ${n.label}</button>`).join('');
+
+            const years = ['all', ...new Set(allFiles.map(f => f.year))];
+            document.getElementById('yearTabs').innerHTML = years.map(y => `<button onclick="sY='${y}';sS='all';renderUI()" class="px-5 py-2 rounded-2xl border border-gray-500/20 text-[10px] font-bold ${sY===y?'active-btn':''}">${y}</button>`).join('');
+
+            const yD = sY === 'all' ? allFiles : allFiles.filter(f => f.year === sY);
+            const subs = ['all', ...new Set(yD.map(f => f.subject))];
+            document.getElementById('subjectSection').classList.toggle('hidden', sY === 'all');
+            document.getElementById('subjectTabs').innerHTML = subs.map(s => `<button onclick="sS='${s}';sC='all';renderUI()" class="px-5 py-2 rounded-2xl border border-gray-500/20 text-[10px] font-bold ${sS===s?'active-btn':''}">${s}</button>`).join('');
+
+            const sD = sS === 'all' ? yD : yD.filter(f => f.subject === sS);
+            const cats = ['all', ...new Set(sD.map(f => f.category))];
+            document.getElementById('typeSection').classList.toggle('hidden', sS === 'all');
+            document.getElementById('typeTabs').innerHTML = cats.map(c => `<button onclick="sC='${c}';renderUI()" class="px-5 py-2 rounded-2xl border border-gray-500/20 text-[10px] font-bold ${sC===c?'active-btn':''}">${c}</button>`).join('');
+
+            const final = sD.filter(f => (sC === 'all' || f.category === sC) && f.name.toLowerCase().includes(q));
+            document.getElementById('fileGrid').innerHTML = final.map(f => `
+                <div class="glass file-card">
+                    <div class="flex items-center gap-4 overflow-hidden flex-1" onclick="window.open('${f.webViewLink}')">
+                        <img src="${f.iconLink}" class="w-4 h-4 opacity-40">
+                        <div class="truncate">
+                            <p class="text-[12px] font-bold truncate">${f.name}</p>
+                            <p class="text-[8px] text-gray-500 uppercase">${f.year} • ${f.category}</p>
+                        </div>
+                    </div>
+                    <button onclick="stars.includes('${f.id}')?stars=stars.filter(s=>s!=='${f.id}'):stars.push('${f.id}'); localStorage.setItem('sh_stars', JSON.stringify(stars)); renderUI();" class="text-xl ml-4 ${stars.includes(f.id)?'text-yellow-500':'text-gray-400'}">★</button>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
         <input type="text" id="clientIdInput" placeholder="Client ID" class="w-full bg-black/10 border border-gray-500 p-3 rounded-xl mb-2 text-xs outline-none text-inherit">
         <input type="password" id="apiKeyInput" placeholder="API Key" class="w-full bg-black/10 border border-gray-500 p-3 rounded-xl mb-4 text-xs outline-none text-inherit">
         <button onclick="saveSettings()" class="w-full bg-purple-600 p-3 rounded-xl text-[10px] font-bold text-white uppercase">Apply Keys</button>
