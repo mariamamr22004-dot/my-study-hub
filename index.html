@@ -1,39 +1,210 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>StudyHub AI - Professional</title>
+    <title>StudyHub AI - Power User</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://apis.google.com/js/api.js" async defer></script>
     <style>
-        :root { --accent: #7c6ff7; --bg: #0f0e17; }
+        :root { --accent: #7c6ff7; --bg: #0b0a12; }
         body { font-family: 'Poppins', sans-serif; background: var(--bg); color: white; -webkit-tap-highlight-color: transparent; }
-        .glass { background: rgba(26, 24, 40, 0.9); backdrop-filter: blur(10px); border: 1px solid #2e2b45; }
-        .active-btn { background: var(--accent) !important; color: white !important; transform: scale(1.05); }
+        .glass { background: rgba(30, 28, 45, 0.95); backdrop-filter: blur(10px); border: 1px solid #2e2b45; }
+        .active-btn { background: var(--accent) !important; color: white !important; box-shadow: 0 0 15px rgba(124, 111, 247, 0.4); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        
-        /* Loading Animation */
-        .dot-flashing { position: relative; width: 10px; height: 10px; border-radius: 5px; background-color: var(--accent); color: var(--accent); animation: dot-flashing 1s infinite linear alternate; animation-delay: 0.5s; }
-        .dot-flashing::before, .dot-flashing::after { content: ""; display: inline-block; position: absolute; top: 0; width: 10px; height: 10px; border-radius: 5px; background-color: var(--accent); color: var(--accent); animation: dot-flashing 1s infinite linear alternate; }
-        .dot-flashing::before { left: -15px; animation-delay: 0s; }
-        .dot-flashing::after { left: 15px; animation-delay: 1s; }
-        @keyframes dot-flashing { 0% { background-color: var(--accent); } 50%, 100% { background-color: rgba(124, 111, 247, 0.2); } }
+        .dot-flashing { position: relative; width: 6px; height: 6px; border-radius: 5px; background-color: var(--accent); animation: dot-flashing 1s infinite linear alternate; }
+        @keyframes dot-flashing { 0% { opacity: 1; } 100% { opacity: 0.2; } }
     </style>
 </head>
-<body class="min-h-screen pb-10">
+<body class="min-h-screen pb-20">
 
-    <nav class="glass sticky top-0 z-50 px-4 py-3 flex justify-between items-center">
-        <h1 class="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-blue-400">🎓 StudyHub AI</h1>
-        <div class="flex gap-2">
-            <button onclick="toggleSettings()" class="p-2">⚙️</button>
-            <button id="authBtn" onclick="handleAuthClick()" class="bg-purple-600 px-3 py-1 rounded-lg text-xs font-bold shadow-md">Connect</button>
+    <nav class="glass sticky top-0 z-50 px-4 py-4 flex justify-between items-center border-b border-white/5">
+        <h1 class="text-xl font-bold tracking-tight">StudyHub <span class="text-purple-500">AI</span></h1>
+        <div class="flex gap-4">
+            <button onclick="toggleSettings()" class="text-xl opacity-70">⚙️</button>
+            <button id="authBtn" onclick="handleAuthClick()" class="bg-purple-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider">Connect</button>
         </div>
     </nav>
 
-    <div id="settingsPanel" class="glass m-4 p-4 rounded-xl hidden border-yellow-500/30 shadow-2xl">
+    <div id="settingsPanel" class="glass m-4 p-5 rounded-3xl hidden shadow-2xl border-purple-500/20">
+        <div class="mb-4">
+            <p class="text-[10px] text-purple-400 mb-3 font-bold uppercase tracking-widest">Developer Keys</p>
+            <input type="text" id="clientIdInput" placeholder="Client ID" class="w-full bg-black/40 border border-gray-800 p-3 rounded-xl mb-2 text-xs outline-none focus:border-purple-500">
+            <input type="password" id="apiKeyInput" placeholder="API Key" class="w-full bg-black/40 border border-gray-800 p-3 rounded-xl mb-3 text-xs outline-none focus:border-purple-500">
+            <button onclick="saveSettings()" class="w-full bg-purple-600/20 border border-purple-600 text-purple-400 p-3 rounded-xl text-[10px] font-bold uppercase">Update Engine</button>
+        </div>
+        <div class="pt-4 border-t border-white/5">
+            <button onclick="clearFilesOnly()" class="w-full bg-red-900/10 border border-red-800/40 text-red-500 p-3 rounded-xl text-[10px] font-bold uppercase">Wipe Cached Data</button>
+        </div>
+    </div>
+
+    <main class="container mx-auto max-w-2xl px-4 mt-6">
+        <div class="glass rounded-3xl p-5 mb-8 shadow-inner">
+            <input type="text" id="folderIdInput" placeholder="Drive Folder Link or ID" class="w-full bg-black/20 border border-white/5 p-4 rounded-2xl mb-4 text-sm outline-none focus:ring-2 ring-purple-500/20 transition-all">
+            <button id="syncBtn" onclick="startScanning()" class="w-full bg-white text-black font-black p-4 rounded-2xl active:scale-95 transition-all uppercase text-[11px] flex justify-center items-center gap-3">
+                <span id="btnText">Sync Database</span>
+                <div id="loader" class="hidden dot-flashing"></div>
+            </button>
+        </div>
+
+        <div id="quickAccessSection" class="hidden mb-8">
+            <h2 class="text-purple-400 text-[10px] font-black mb-3 uppercase tracking-[0.2em]">⚡ Quick Access</h2>
+            <div id="quickAccessGrid" class="flex gap-2 overflow-x-auto no-scrollbar"></div>
+        </div>
+
+        <div class="space-y-6 mb-10">
+            <section>
+                <div class="flex justify-between items-center mb-3 px-1">
+                    <h2 class="text-gray-500 text-[10px] font-black uppercase tracking-widest">Step 1: Year</h2>
+                    <button id="starYear" onclick="toggleNavStar('year')" class="text-xs opacity-30">★</button>
+                </div>
+                <div id="yearTabs" class="flex gap-2 overflow-x-auto no-scrollbar pb-1"></div>
+            </section>
+
+            <section id="subjectSection" class="hidden">
+                <div class="flex justify-between items-center mb-3 px-1">
+                    <h2 class="text-gray-500 text-[10px] font-black uppercase tracking-widest">Step 2: Subject</h2>
+                    <button id="starSub" onclick="toggleNavStar('sub')" class="text-xs opacity-30">★</button>
+                </div>
+                <div id="subjectTabs" class="flex gap-2 overflow-x-auto no-scrollbar pb-1"></div>
+            </section>
+
+            <section id="typeSection" class="hidden">
+                <div class="flex justify-between items-center mb-3 px-1">
+                    <h2 class="text-gray-500 text-[10px] font-black uppercase tracking-widest">Step 3: Type</h2>
+                    <button id="starCat" onclick="toggleNavStar('cat')" class="text-xs opacity-30">★</button>
+                </div>
+                <div id="typeTabs" class="flex gap-2 overflow-x-auto no-scrollbar pb-1"></div>
+            </section>
+        </div>
+
+        <div id="fileGrid" class="grid gap-3 pt-6 border-t border-white/5"></div>
+    </main>
+
+    <script>
+        let CONFIG = JSON.parse(localStorage.getItem('studyHub_Config')) || { clientId: '', apiKey: '' };
+        let allFiles = JSON.parse(localStorage.getItem('studyHub_Files')) || [];
+        let stars = JSON.parse(localStorage.getItem('studyHub_Stars')) || [];
+        let navStars = JSON.parse(localStorage.getItem('studyHub_NavStars')) || []; // Bookmarks
+        let tokenClient, accessToken = null;
+        let selYear = 'all', selSub = 'all', selCat = 'all';
+
+        const typeKeywords = { quiz:['quiz','test'], final:['final','exam'], solution:['sol','solution','حل'], midterm:['midterm','mid'], summary:['sum','summary','ملخص'], lecture:['lec','lecture','محاضرة'] };
+
+        function gapiLoaded() { if(CONFIG.apiKey) gapi.load('client', () => gapi.client.init({ apiKey: CONFIG.apiKey, discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"] })); }
+        function gisLoaded() { if(CONFIG.clientId) tokenClient = google.accounts.oauth2.initTokenClient({ client_id: CONFIG.clientId, scope: 'https://www.googleapis.com/auth/drive.readonly', callback: (resp) => { accessToken = resp.access_token; document.getElementById('authBtn').innerText = "Live"; } }); }
+        window.onload = () => { gapiLoaded(); gisLoaded(); renderUI(); };
+
+        function toggleSettings() { document.getElementById('settingsPanel').classList.toggle('hidden'); }
+        function saveSettings() { CONFIG.clientId = document.getElementById('clientIdInput').value; CONFIG.apiKey = document.getElementById('apiKeyInput').value; localStorage.setItem('studyHub_Config', JSON.stringify(CONFIG)); location.reload(); }
+        function clearFilesOnly() { if(confirm("Wipe cache?")) { localStorage.removeItem('studyHub_Files'); localStorage.removeItem('studyHub_Stars'); localStorage.removeItem('studyHub_NavStars'); location.reload(); } }
+        function handleAuthClick() { tokenClient.requestAccessToken({ prompt: 'consent' }); }
+
+        async function startScanning() {
+            const input = document.getElementById('folderIdInput').value;
+            const folderId = input.includes('id=') ? input.split('id=')[1] : (input.includes('/') ? input.split('/').pop() : input);
+            if (!folderId || !accessToken) return alert("Sign In Required!");
+            document.getElementById('loader').classList.remove('hidden');
+            await scanFolder(folderId);
+            localStorage.setItem('studyHub_Files', JSON.stringify(allFiles));
+            document.getElementById('loader').classList.add('hidden');
+            renderUI();
+        }
+
+        async function scanFolder(id, path = "") {
+            const resp = await gapi.client.drive.files.list({ q: `'${id}' in parents and trashed = false`, fields: 'files(id, name, mimeType, webViewLink, iconLink)' });
+            for (let f of resp.result.files) {
+                if (f.mimeType === 'application/vnd.google-apps.folder') {
+                    await scanFolder(f.id, path + f.name + "/");
+                } else {
+                    const tree = path.split('/').filter(p => p);
+                    f.year = tree.find(p => /(spring|fall|summer)\s?\d{2}/i.test(p)) || 'General';
+                    f.subject = tree[tree.indexOf(f.year) + 1] || 'Resources';
+                    f.category = Object.keys(typeKeywords).find(t => typeKeywords[t].some(k => (f.name + path).toLowerCase().includes(k))) || 'file';
+                    const idx = allFiles.findIndex(x => x.id === f.id);
+                    if (idx !== -1) allFiles[idx] = f; else allFiles.push(f);
+                }
+            }
+        }
+
+        // Bookmark a specific Path (Year > Sub > Cat)
+        function toggleNavStar(level) {
+            const bookmark = { year: selYear, sub: selSub, cat: selCat, label: `${selYear} • ${selSub}` };
+            if (selYear === 'all') return;
+            const exists = navStars.findIndex(n => n.year === selYear && n.sub === selSub && n.cat === selCat);
+            if (exists !== -1) navStars.splice(exists, 1); else navStars.push(bookmark);
+            localStorage.setItem('studyHub_NavStars', JSON.stringify(navStars));
+            renderUI();
+        }
+
+        function editFile(id) {
+            const f = allFiles.find(x => x.id === id);
+            const newName = prompt("Edit Filename:", f.name);
+            const newSub = prompt("Edit Subject:", f.subject);
+            if (newName) f.name = newName;
+            if (newSub) f.subject = newSub;
+            localStorage.setItem('studyHub_Files', JSON.stringify(allFiles));
+            renderUI();
+        }
+
+        function deleteFile(id) {
+            if(confirm("Delete this file from local view?")) {
+                allFiles = allFiles.filter(x => x.id !== id);
+                localStorage.setItem('studyHub_Files', JSON.stringify(allFiles));
+                renderUI();
+            }
+        }
+
+        function renderUI() {
+            // Quick Access
+            document.getElementById('quickAccessSection').classList.toggle('hidden', navStars.length === 0);
+            document.getElementById('quickAccessGrid').innerHTML = navStars.map(n => `
+                <button onclick="selYear='${n.year}';selSub='${n.sub}';selCat='${n.cat}';renderUI()" class="glass px-4 py-2 rounded-2xl text-[9px] font-bold whitespace-nowrap border-purple-500/30">
+                    📍 ${n.label}
+                </button>
+            `).join('');
+
+            // Hierarchy
+            const years = ['all', ...new Set(allFiles.map(f => f.year))];
+            document.getElementById('yearTabs').innerHTML = years.map(y => `<button onclick="selYear='${y}';selSub='all';renderUI()" class="px-5 py-2 rounded-2xl border border-white/5 text-[10px] font-bold whitespace-nowrap transition-all ${selYear===y?'active-btn':''}">${y}</button>`).join('');
+
+            const yearData = selYear === 'all' ? allFiles : allFiles.filter(f => f.year === selYear);
+            const subs = ['all', ...new Set(yearData.map(f => f.subject))];
+            document.getElementById('subjectSection').classList.toggle('hidden', selYear === 'all');
+            document.getElementById('subjectTabs').innerHTML = subs.map(s => `<button onclick="selSub='${s}';selCat='all';renderUI()" class="px-5 py-2 rounded-2xl border border-white/5 text-[10px] font-bold whitespace-nowrap transition-all ${selSub===s?'active-btn':''}">${s}</button>`).join('');
+
+            const subData = selSub === 'all' ? yearData : yearData.filter(f => f.subject === selSub);
+            const cats = ['all', ...new Set(subData.map(f => f.category))];
+            document.getElementById('typeSection').classList.toggle('hidden', selSub === 'all');
+            document.getElementById('typeTabs').innerHTML = cats.map(c => `<button onclick="selCat='${c}';renderUI()" class="px-5 py-2 rounded-2xl border border-white/5 text-[10px] font-bold whitespace-nowrap transition-all ${selCat===c?'active-btn':''}">${c}</button>`).join('');
+
+            // Update Star Icons
+            document.getElementById('starSub').style.opacity = navStars.some(n => n.year === selYear && n.sub === selSub) ? "1" : "0.3";
+            document.getElementById('starSub').classList.toggle('text-yellow-500', navStars.some(n => n.year === selYear && n.sub === selSub));
+
+            const final = subData.filter(f => (selCat === 'all' || f.category === selCat));
+            document.getElementById('fileGrid').innerHTML = final.map(f => `
+                <div class="glass p-4 rounded-3xl flex justify-between items-center active:scale-[0.98] transition-all">
+                    <div class="flex items-center gap-4 truncate" onclick="window.open('${f.webViewLink}')">
+                        <img src="${f.iconLink}" class="w-5 h-5 opacity-40 shrink-0">
+                        <div class="truncate">
+                            <p class="text-[13px] font-bold text-white/90 truncate">${f.name}</p>
+                            <p class="text-[8px] text-gray-500 uppercase font-black tracking-widest">${f.subject} • ${f.category}</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-3 ml-2">
+                        <button onclick="editFile('${f.id}')" class="text-xs opacity-30">🖊️</button>
+                        <button onclick="deleteFile('${f.id}')" class="text-xs opacity-30">🗑️</button>
+                        <button onclick="event.stopPropagation(); stars.includes('${f.id}')?stars=stars.filter(s=>s!=='${f.id}'):stars.push('${f.id}'); localStorage.setItem('studyHub_Stars', JSON.stringify(stars)); renderUI();" class="text-lg ${stars.includes(f.id)?'text-yellow-500':'text-gray-700'}">★</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
         <p class="text-[10px] text-yellow-500 mb-2 font-bold uppercase">Cloud Configuration</p>
         <input type="text" id="clientIdInput" placeholder="Client ID" class="w-full bg-black/40 border border-gray-700 p-2 rounded mb-2 text-xs text-white outline-none">
         <input type="password" id="apiKeyInput" placeholder="API Key" class="w-full bg-black/40 border border-gray-700 p-2 rounded mb-2 text-xs text-white outline-none">
