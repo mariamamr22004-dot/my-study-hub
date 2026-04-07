@@ -200,6 +200,172 @@
     </script>
 </body>
 </html>
+        <div class="glass rounded-2xl p-4 mb-6">
+            <input type="text" id="folderIdInput" placeholder="Drive Folder ID" class="w-full bg-black/40 border border-gray-700 p-3 rounded-xl mb-3 text-sm outline-none">
+            <button onclick="startScanning()" class="w-full bg-green-500 text-black font-bold p-3 rounded-xl hover:bg-green-400 mb-4 transition">Sync Data</button>
+            <div class="relative">
+                <input type="text" id="mainSearch" oninput="renderUI()" placeholder="Search in your files..." class="w-full bg-purple-900/10 border border-purple-500/30 p-3 rounded-xl text-sm outline-none">
+                <span class="absolute right-4 top-3 opacity-50">🔍</span>
+            </div>
+        </div>
+
+        <div id="starredSection" class="hidden mb-6 px-2">
+            <h2 class="text-yellow-500 text-[10px] font-bold mb-3 tracking-widest uppercase">⭐ Starred Files</h2>
+            <div id="starredGrid" class="grid gap-2"></div>
+        </div>
+
+        <section class="mb-6">
+            <h2 class="text-[10px] text-gray-500 font-bold mb-3 tracking-widest uppercase">Step 1: Academic Year</h2>
+            <div id="yearTabs" class="flex gap-2 overflow-x-auto pb-2 no-scrollbar"></div>
+        </section>
+
+        <section id="subjectSection" class="mb-6 hidden">
+            <h2 class="text-[10px] text-gray-500 font-bold mb-3 tracking-widest uppercase">Step 2: Subject</h2>
+            <div id="subjectTabs" class="flex gap-2 overflow-x-auto pb-2 no-scrollbar"></div>
+        </section>
+
+        <section id="categorySection" class="mb-6 hidden">
+            <h2 class="text-[10px] text-gray-500 font-bold mb-3 tracking-widest uppercase">Step 3: Type</h2>
+            <div id="categoryTabs" class="flex gap-2 overflow-x-auto pb-2 no-scrollbar"></div>
+        </section>
+
+        <div id="fileGrid" class="grid gap-3 pt-4 border-t border-gray-900"></div>
+    </main>
+
+    <script>
+        let CONFIG = JSON.parse(localStorage.getItem('studyHub_Config')) || { clientId: '', apiKey: '' };
+        let allFiles = JSON.parse(localStorage.getItem('studyHub_Files')) || [];
+        let stars = JSON.parse(localStorage.getItem('studyHub_Stars')) || [];
+        let tokenClient, accessToken = null;
+        
+        let selYear = 'all', selSubject = 'all', selCat = 'all';
+
+        const typeKeywords = {
+            final: ['final', 'exam'],
+            solution: ['solution', 'sol', 'model answer'],
+            quiz: ['quiz', 'test'],
+            midterm: ['midterm', 'mid'],
+            summary: ['summary', 'sum', 'notes'],
+            lab: ['lab', 'practical'],
+            sheet: ['sheet', 'assignment']
+        };
+
+        function gapiLoaded() { if(CONFIG.apiKey) gapi.load('client', () => gapi.client.init({ apiKey: CONFIG.apiKey, discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"] })); }
+        function gisLoaded() { if(CONFIG.clientId) tokenClient = google.accounts.oauth2.initTokenClient({ client_id: CONFIG.clientId, scope: 'https://www.googleapis.com/auth/drive.readonly', callback: (resp) => { accessToken = resp.access_token; document.getElementById('authBtn').innerText = "Connected ✅"; } }); }
+        window.onload = () => { gapiLoaded(); gisLoaded(); renderUI(); };
+
+        function saveSettings() { CONFIG.clientId = document.getElementById('clientIdInput').value; CONFIG.apiKey = document.getElementById('apiKeyInput').value; localStorage.setItem('studyHub_Config', JSON.stringify(CONFIG)); location.reload(); }
+        function toggleSettings() { document.getElementById('settingsPanel').classList.toggle('hidden'); }
+        function handleAuthClick() { tokenClient.requestAccessToken({ prompt: 'consent' }); }
+
+        async function startScanning() {
+            const input = document.getElementById('folderIdInput').value;
+            const folderId = input.includes('id=') ? input.split('id=')[1] : (input.includes('/') ? input.split('/').pop() : input);
+            if (!folderId) return;
+            allFiles = [];
+            await scanFolder(folderId);
+            localStorage.setItem('studyHub_Files', JSON.stringify(allFiles));
+            renderUI();
+        }
+
+        async function scanFolder(folderId, pathParts = []) {
+            const response = await gapi.client.drive.files.list({ 
+                q: `'${folderId}' in parents and trashed = false`, 
+                fields: 'files(id, name, mimeType, webViewLink, iconLink)' 
+            });
+            
+            for (let file of response.result.files) {
+                if (file.mimeType === 'application/vnd.google-apps.folder') {
+                    // Dive deeper and pass the folder name into pathParts
+                    await scanFolder(file.id, [...pathParts, file.name]);
+                } else {
+                    // Logic to extract data from path array
+                    file.year = pathParts.find(p => /(spring|fall|summer)\s?\d{2}/i.test(p)) || 'OTHER';
+                    
+                    // Subject is usually the folder right AFTER the Year folder, or the one before the file
+                    const yearIndex = pathParts.indexOf(file.year);
+                    if (yearIndex !== -1 && pathParts[yearIndex + 1]) {
+                        file.subject = pathParts[yearIndex + 1].toUpperCase();
+                    } else {
+                        file.subject = pathParts.length > 0 ? pathParts[pathParts.length - 1].toUpperCase() : 'GENERAL';
+                    }
+
+                    file.category = detectCategory(file.name, pathParts[pathParts.length - 1]);
+                    file.path = pathParts.join(' / ');
+                    allFiles.push(file);
+                }
+            }
+        }
+
+        function detectCategory(name, parent) {
+            const combined = (name + " " + (parent || "")).toLowerCase();
+            for (const [type, keys] of Object.entries(typeKeywords)) {
+                if (keys.some(k => combined.includes(k))) return type;
+            }
+            return 'other';
+        }
+
+        function toggleStar(id, e) { 
+            e.stopPropagation(); 
+            stars.includes(id) ? stars = stars.filter(s => s !== id) : stars.push(id); 
+            localStorage.setItem('studyHub_Stars', JSON.stringify(stars)); 
+            renderUI(); 
+        }
+
+        function renderUI() {
+            const term = document.getElementById('mainSearch').value.toLowerCase();
+            
+            // 1. Starred
+            const starredFiles = allFiles.filter(f => stars.includes(f.id));
+            document.getElementById('starredGrid').innerHTML = starredFiles.map(f => fileCard(f)).join('');
+            document.getElementById('starredSection').classList.toggle('hidden', starredFiles.length === 0);
+
+            // 2. Year Tabs
+            const years = ['all', ...new Set(allFiles.map(f => f.year))];
+            document.getElementById('yearTabs').innerHTML = years.map(y => `<button onclick="selYear='${y}';selSubject='all';selCat='all';renderUI()" class="px-4 py-1 rounded-full border border-gray-700 text-[10px] whitespace-nowrap ${selYear===y?'step-active':''}">${y}</button>`).join('');
+
+            // 3. Subject Tabs
+            const filteredByYear = selYear === 'all' ? allFiles : allFiles.filter(f => f.year === selYear);
+            const subjects = ['all', ...new Set(filteredByYear.map(f => f.subject))];
+            document.getElementById('subjectSection').classList.toggle('hidden', selYear === 'all' && allFiles.length === 0);
+            document.getElementById('subjectTabs').innerHTML = subjects.map(s => `<button onclick="selSubject='${s}';selCat='all';renderUI()" class="px-4 py-1 rounded-full border border-gray-700 text-[10px] whitespace-nowrap ${selSubject===s?'step-active':''}">${s}</button>`).join('');
+
+            // 4. Category Tabs
+            const filteredBySub = selSubject === 'all' ? filteredByYear : filteredByYear.filter(f => f.subject === selSubject);
+            const cats = ['all', ...new Set(filteredBySub.map(f => f.category))];
+            document.getElementById('categorySection').classList.toggle('hidden', selSubject === 'all');
+            document.getElementById('categoryTabs').innerHTML = cats.map(c => `<button onclick="selCat='${c}';renderUI()" class="px-4 py-1 rounded-full border border-gray-700 text-[10px] whitespace-nowrap ${selCat===c?'step-active':''}">${c.toUpperCase()}</button>`).join('');
+
+            // 5. Main Grid
+            const finalFiles = filteredBySub.filter(f => {
+                const matchesCat = selCat === 'all' || f.category === selCat;
+                const matchesSearch = f.name.toLowerCase().includes(term) || f.subject.toLowerCase().includes(term);
+                return matchesCat && matchesSearch;
+            });
+            document.getElementById('fileGrid').innerHTML = finalFiles.map(f => fileCard(f)).join('');
+        }
+
+        function fileCard(f) {
+            const isStarred = stars.includes(f.id);
+            return `
+                <div class="glass p-3 rounded-xl flex justify-between items-center hover:border-purple-500 transition" onclick="window.open('${f.webViewLink}')">
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <img src="${f.iconLink}" class="w-4 h-4">
+                        <div class="truncate">
+                            <p class="text-xs font-semibold truncate">${f.name}</p>
+                            <p class="text-[8px] text-gray-500 uppercase tracking-tighter">${f.year} > ${f.subject}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[7px] px-1.5 py-0.5 rounded bg-purple-950/40 text-purple-400 border border-purple-800 uppercase">${f.category}</span>
+                        <button onclick="toggleStar('${f.id}', event)" class="text-sm ${isStarred?'star-active':'text-gray-700'}">★</button>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
 erUI()" class="px-4 py-1 rounded-full border border-gray-800 text-[10px] whitespace-nowrap ${selCat===c?'step-active':''}">${c.toUpperCase()}</button>`).join('');
 
             // 5. Main Grid
